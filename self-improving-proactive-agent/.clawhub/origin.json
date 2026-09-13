@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "registry": "https://clawhub.ai",
+  "slug": "self-improving-proactive-agent",
+  "installedVersion": "1.0.0",
+  "installedAt": 1784890536655,
+  "artifact": {
+    "kind": "archive",
+    "sha256": "05b718b2153c55574ee4ff051b83707f5f0323f1006747b55d5dcc1e09c1dc04",
+    "integrity": "sha256-BbcYshU8VVdO5P8FG4Nwf18DI/EAZ0e1XV3MHgnB3AQ="
+  },
+  "skillFile": {
+    "path": "SKILL.md",
+    "sha256": "f95e92acab4b5a5fc2b1788e5030d64706d0e4c0047e647758892a1d8d2eeb21"
+  }
+}

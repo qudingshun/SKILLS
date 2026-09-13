@@ -1,0 +1,29 @@
+{
+  "scm": {
+    "username": "hsa697",
+    "password": "",
+    "org_code": "M03",
+    "audit_date": "2026-08-14",
+    "shipment_date_start": "2026-07-17",
+    "dir_task1": "E:\\OneDrive\\桌面\\桌面临时文件\\PMC小工具\\回货引用文件\\加载文件",
+    "dir_task2": "E:\\OneDrive\\桌面\\桌面临时文件\\PMC小工具\\回货引用文件\\加载文件",
+    "dir_task3": "E:\\OneDrive\\桌面\\桌面临时文件\\PMC小工具\\回货引用文件\\加载文件",
+    "dir_task4": "E:\\OneDrive\\桌面\\桌面临时文件\\PMC小工具\\回货引用文件\\加载文件",
+    "dir_task5": "E:\\OneDrive\\桌面\\桌面临时文件\\PMC小工具\\回货引用文件\\加载文件",
+    "dir_export": "E:\\OneDrive\\桌面\\桌面临时文件\\PMC小工具\\回货引用文件\\加载文件"
+  },
+  "fanruan": {
+    "username": "HSA697",
+    "password": "",
+    "factory_code": "664",
+    "dir_bom": "D:\\360安全浏览器下载",
+    "dir_report1": "E:\\OneDrive\\桌面\\桌面临时文件\\PMC小工具\\回货引用文件\\加载文件",
+    "dir_report2": "E:\\OneDrive\\桌面\\桌面临时文件\\PMC小工具\\回货引用文件\\加载文件",
+    "dir_stock": "E:\\OneDrive\\桌面\\桌面临时文件\\PMC小工具\\回货引用文件\\加载文件"
+  },
+  "oa": {
+    "username": "hsa697",
+    "factory_code": "M03",
+    "plan_dir": "E:\\OneDrive\\桌面\\桌面临时文件\\PMC小工具\\回货引用文件\\加载文件"
+  }
+}

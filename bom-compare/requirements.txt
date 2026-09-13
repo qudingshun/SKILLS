@@ -1,0 +1,2 @@
+# bom-compare 依赖（共用 E:\SKILLS\.venv）
+pywin32

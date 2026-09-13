@@ -1,0 +1,2 @@
+# inventory_daily 依赖（共用 E:\SKILLS\.venv）
+pywin32

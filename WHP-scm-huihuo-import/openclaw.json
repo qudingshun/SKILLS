@@ -1,0 +1,27 @@
+{
+  "name": "WHP-scm-huihuo-import",
+  "description": "SCM 回货计划导入 & 发放 — 登录SCM系统，自动新增回货行并填写料号/数量/组织/地址/备注/日期，保存审核后自动进行回货计划发放",
+  "version": "2.2.0",
+  "author": "Whirlpool China Factory Automation",
+  "entry_point": "scripts/run.js",
+  "skills": {
+    "WHP-scm-huihuo-import": {
+      "triggers": [
+        "回货",
+        "huihuo",
+        "帮我回货",
+        "回货计划",
+        "SCM回货",
+        "无头回货",
+        "headless回货"
+      ],
+      "icon": "📦",
+      "always": false,
+      "requires": {
+        "bins": ["python", "msedge"],
+        "packages": ["playwright", "ddddocr", "cryptography"]
+      },
+      "os": ["windows"]
+    }
+  }
+}

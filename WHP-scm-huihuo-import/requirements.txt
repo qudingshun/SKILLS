@@ -1,0 +1,8 @@
+# WHP-scm-huihuo-import 依赖（共用 E:\SKILLS\.venv）
+playwright>=1.62.0
+cryptography
+urllib3
+pandas
+openpyxl
+ddddocr
+lxml

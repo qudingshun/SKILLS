@@ -1,0 +1,8 @@
+playwright>=1.40
+pandas>=2.0
+openpyxl
+ddddocr
+cryptography
+lxml
+urllib3
+requests

@@ -1,0 +1,2 @@
+# material-inventory-check 依赖（共用 E:\SKILLS\.venv）
+openpyxl

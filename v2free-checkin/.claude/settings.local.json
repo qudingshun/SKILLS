@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import selenium; print\\('selenium:', selenium.__version__\\)\")",
+      "Bash(where msedgedriver *)",
+      "Bash(python *)"
+    ]
+  }
+}

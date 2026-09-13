@@ -1,0 +1,3 @@
+# reporting-tools 依赖（共用 E:\SKILLS\.venv）
+pywin32
+openpyxl

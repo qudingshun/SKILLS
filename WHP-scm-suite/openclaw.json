@@ -1,0 +1,26 @@
+{
+  "name": "WHP-scm-suite",
+  "description": "WHP 惠而浦系业务技能统一套件 —— 业务代码与配置中心。包含 SCM 回货导入/发放、SCM 已接收入库导出、SCM/OA/帆软统一报表下载、系统数据查询 4 个模块，统一入口 scripts/run.js，配置 runtime_config.json，密码库 runtime_config/passwords。",
+  "version": "1.0.0",
+  "author": "Whirlpool China Factory Automation",
+  "entry_point": "scripts/run.js",
+  "skills": {
+    "WHP-scm-suite": {
+      "triggers": [
+        "回货",
+        "已接收入库",
+        "报表下载",
+        "系统数据查询"
+      ],
+      "icon": "📦",
+      "always": false,
+      "requires": {
+        "bins": ["node", "msedge"],
+        "packages": ["playwright", "pandas", "openpyxl", "ddddocr", "cryptography", "lxml", "urllib3"]
+      },
+      "os": ["windows"]
+    }
+  },
+  "workspace_root": "C:\\Users\\qudin\\.openclaw\\workspace\\skills\\WHP-scm-suite",
+  "business_logic_path": "E:\\SKILLS\\WHP-scm-suite"
+}

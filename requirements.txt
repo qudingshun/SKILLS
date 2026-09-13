@@ -1,0 +1,29 @@
+# E:\SKILLS 共享 Python 依赖（统一维护）
+# 所有 Python 技能共用 E:\SKILLS\.venv 虚拟环境
+# 更新方式: .venv\Scripts\python.exe -m pip install -r requirements.txt
+#
+# Playwright / 浏览器自动化
+playwright>=1.62.0
+
+# 数据处理
+pandas
+openpyxl
+numpy
+
+# Excel COM 自动化（Windows，inventory_daily / reporting-tools 使用）
+pywin32
+
+# OCR 验证码识别（WHP-scm-huihuo-import / WHP-whirlpool-download）
+ddddocr
+
+# SCM 登录加密
+cryptography
+
+# HTML/XML 解析
+lxml
+
+# 网络
+urllib3
+
+# 浏览器自动化（v2free-checkin）
+selenium
