@@ -31,4 +31,14 @@ cred.json
 
 # Encrypted password vaults
 **/runtime_config/passwords/
+**/*_runtime_config/passwords/
 *.dat
+
+# Per-skill backups of old / unused files (kept locally, NOT uploaded)
+_backup/
+_archive/
+
+# Runtime state / cache
+**/.cache/
+.download-state.json
+.export-state.json

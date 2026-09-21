@@ -41,8 +41,8 @@ description: >
 {
   "tool": "exec",
   "params": {
-    "command": "node scripts/run.js --material \"70C012345\" --qty \"5\" [--date \"YYYY-MM-DD\"] [--remarks \"备注文字\"] [--headless]",
-    "workdir": "C:\\Users\\qudin\\.openclaw\\workspace\\skills\\WHP-scm-huihuo-import",
+    "command": "node scripts/run.js --material \"70C012345\" --qty \"5\" [--date \"YYYY-MM-DD\"] [--remarks \"备注文字\"] [--visible]",
+    "workdir": "E:\\SKILLS\\WHP-scm-huihuo-import",
     "timeout": 600
   }
 }
@@ -60,13 +60,13 @@ node scripts/run.js --material "70C012345" --qty "5" --remarks "售后配件"
 node scripts/run.js --material "70C012345" --qty "5" --date "2026-06-01" --remarks "售后配件"
 ```
 
-### 无头模式（用户提及"无头"或"headless"时）
+### 可见模式（用户明确要求"显示浏览器窗口"/"调试"时）
 ```bash
-node scripts/run.js --headless --material "70C012345" --qty "5"
+node scripts/run.js --visible --material "70C012345" --qty "5"
 # 多行：
-node scripts/run.js --headless --data "70C11099 2, 70A01234 3"
+node scripts/run.js --visible --data "70C11099 2, 70A01234 3"
 ```
-> ⚡ 无头模式：浏览器窗口不可见，后台静默运行。`--headless` 可放在任意位置。
+> ⚡ 默认即无头模式：浏览器窗口不可见，后台静默运行。`--visible` 可放在任意位置。
 
 ### 多行回货
 ```
@@ -86,13 +86,13 @@ node scripts/run.js --data "PUA313 9000, 3012111350140 2000, PUA223 131"
 
 ### 跨模型执行规则（不可违反）
 1. 收到用户指令后，**当前轮必须立即输出 `exec` 工具调用**，不允许纯文字占位
-2. workdir 固定：`C:\Users\qudin\.openclaw\workspace\skills\WHP-scm-huihuo-import`
+2. workdir 固定：`E:\SKILLS\WHP-scm-huihuo-import`
 3. **命令体中禁止写 `cd ... && ...` 格式**，必须通过 `workdir` 参数传递工作目录
 4. **禁止在 command 中使用 `python`**，必须用 `py`（系统只有 `py.exe`）
 5. 用户输入的中文逗号 `，` → 自动替换为英文逗号 `,`
 6. 多行输入先转换为逗号分隔后再传给 `--data`
 7. 启动后必须用 `process(poll)` 等待完成并执行 `process(log)` 获取完整日志再汇报
-8. 用户提及「无头」或「headless」→ 自动在命令中追加 `--headless` 参数
+8. 默认即无头模式（无需任何参数），浏览器窗口不可见后台静默运行；仅当用户明确要求「显示浏览器窗口」或「调试」时才追加 `--visible` 参数
 
 ## 执行流程（直通批量导入模式）
 
@@ -149,16 +149,16 @@ node scripts/run.js --data "PUA313 9000, 3012111350140 2000, PUA223 131"
 ## 登录凭证
 
 - URL: https://scm.whirlpool-china.com:7580/websrm/
-- 账号: 配置于 `scripts/runtime_config.json` → `scm.username`
-- 密码: AES-256 加密存储于 `scripts/runtime_config/passwords/scm_password.dat`
+- 账号: 配置于 `scripts/huihuo_runtime_config.json` → `scm.username`
+- 密码: AES-256 加密存储于 `scripts/huihuo_runtime_config/passwords/scm_password.dat`
 - 验证码: 自动 OCR 识别
-- 密码管理: 运行 `python scripts/secure_config.py` 可交互式设置各服务密码
+- 密码管理: 运行 `python scripts/huihuo_secure_config.py` 可交互式设置各服务密码
 
 ## 浏览器
 
 - 使用 msedge
-- 默认可见模式（`headless=False`，窗口可见便于调试）
-- `--headless` 参数启用无头模式（后台静默运行）
+- 默认无头模式（`headless=True`，浏览器窗口不可见，后台静默运行）
+- `--visible` 参数启用可见模式（窗口可见便于调试）
 - 端口: 9222 (远程调试)
 - 完成后自动关闭浏览器
 
@@ -166,8 +166,14 @@ node scripts/run.js --data "PUA313 9000, 3012111350140 2000, PUA223 131"
 
 | 文件 | 说明 |
 |------|------|
+| `scripts/run.js` | Node.js 入口，解析用户指令，调用固定 venv 下的 Python |
 | `scripts/huihuo_scm.py` | SCM 自动化主脚本（Playwright） |
-| `scripts/run.js` | Node.js 入口，解析用户指令并调用 Python |
+| `scripts/huihuo_secure_config.py` | 配置/密码管理（AES-256 加密） |
+| `scripts/install_deps.py` | 一键安装依赖（`py scripts/install_deps.py`） |
+| `scripts/huihuo_runtime_config.json` | 运行时配置（用户名等） |
+| `scripts/huihuo_runtime_config/passwords/scm_password.dat` | AES-256 加密的 SCM 密码 |
+
+> 运行环境：`E:\SKILLS\.venv`（共享虚拟环境，依赖完整）。
 
 ## 开发备注
 
@@ -176,6 +182,19 @@ node scripts/run.js --data "PUA313 9000, 3012111350140 2000, PUA223 131"
 - 验证码 OCR 依赖 `ddddocr`，首次使用会自动下载模型文件
 
 ## 已知修复记录
+
+### 2026-09-16 — 运行环境固定为共享 venv（重要）
+- 解释器**固定为** `E:\SKILLS\.venv\Scripts\python.exe`：`run.js` 写死该路径并做存在性校验（缺失直接报错，不再静默用错环境）
+- 根因：曾出现放错位置的 `E:\SKILLS\scm-huihuo-import\scripts\.venv`（uv 生成，只有 playwright、缺 cryptography）→ 运行报 `No module named 'cryptography'`。该错误 venv 已删除
+- 同时删除 `scripts/pyproject.toml` / `scripts/uv.lock`，避免再次生成不完整 venv
+- 清理无用文件：`scripts/_optimize.py`、`scripts/debug_login.py`（含明文密码）、`scripts/huihuo_scm_headless.py`、`scripts/run_headless.js`、`scripts/q.py`、根目录 `_upd_skill.py` / `_update_skill.py`
+
+### 2026-07-19 — 安全升级 / 有头无头合并 / 日志升级
+- **凭据安全**：SCM 密码改为 AES-256 加密存储（`huihuo_secure_config.py` + `huihuo_runtime_config/passwords/scm_password.dat`），移除源码明文密码；`huihuo_secure_config.py` 去除 `whirlpool_common` 外部依赖
+- **有头/无头合并**：`create_browser(playwright, headless=False)` 统一入口；`run.js` 透传 `--headless`；删除独立无头脚本（`huihuo_scm_headless.py` / `run_headless.js`）
+- **依赖新增** `cryptography`
+- **日志升级**：`logging` + `RotatingFileHandler` 写 `scripts/scm_huihuo.log`（2MB×5，UTF-8）；`ts()` 改走 logger；`SUMMARY` JSON 写入日志，便于 grep/jq 解析
+- **审计修复**：`_capture_save_dialog` 的 `time.sleep` → `asyncio.sleep`（避免阻塞协程）
 
 ### 2026-05-30 — 简化 v2.2（去四阶段，直通批量导入）
 - 移除四阶段框架和 mode 参数
@@ -233,7 +252,7 @@ node scripts/run.js --data "PUA313 9000, 3012111350140 2000, PUA223 131"
 
 ### 执行时序（跨模型必须一致）
 1. 收到用户指令 → **立即在同一轮输出中包含 `exec` 调用**，不写纯叙述性占位文字
-2. workdir 固定为 skill 目录：`C:\Users\qudin\.openclaw\workspace\skills\WHP-scm-huihuo-import`
+2. workdir 固定为 skill 目录：`E:\SKILLS\WHP-scm-huihuo-import`
 3. 命令路径统一用：`node scripts/run.js`（相对 skill 目录）
 4. 超时设 600s，等待完成后用 `process(poll)` 获取结果并汇报
 

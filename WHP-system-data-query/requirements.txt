@@ -1,4 +1,0 @@
-# WHP-system-data-query 依赖（共用 E:\SKILLS\.venv）
-playwright>=1.62.0
-ddddocr
-cryptography

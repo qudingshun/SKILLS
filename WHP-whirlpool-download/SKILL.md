@@ -33,7 +33,7 @@ description: >
 - Edge 浏览器已安装（版本 80+）
 - 首次运行需先设置加密密码:
   ```bash
-  py scripts/secure_config.py
+  py scripts/download_secure_config.py
   ```
 
 ## 触发指令
@@ -50,7 +50,7 @@ description: >
   "tool": "exec",
   "params": {
     "command": "node scripts/run.js",
-    "workdir": "C:\\Users\\qudin\\.openclaw\\workspace\\skills\\WHP-whirlpool-download",
+    "workdir": "E:\\SKILLS\\WHP-whirlpool-download",
     "timeout": 1200
   }
 }
@@ -78,12 +78,12 @@ node scripts/run.js --module fanruan
 
 ### "设置密码"
 ```bash
-py scripts/secure_config.py
+py scripts/download_secure_config.py
 ```
 
 ### 跨模型执行规则（不可违反）
 1. 收到用户指令后，**当前轮必须立即输出 `exec` 工具调用**，不允许纯文字占位
-2. workdir 固定：`C:\Users\qudin\.openclaw\workspace\skills\WHP-whirlpool-download`
+2. workdir 固定：`E:\SKILLS\WHP-whirlpool-download`
 3. 命令体中禁止写 `cd ... && ...` 格式
 4. 禁止在 command 中使用 `python`，必须用 `py`
 5. 默认超时 1200s（20分钟），因 SCM+OA+帆软全流程较慢
@@ -123,11 +123,11 @@ py scripts/secure_config.py
 
 ## 配置文件
 
-### runtime_config.json（首次运行自动创建）
-位置：`C:\Users\qudin\.openclaw\workspace\skills\WHP-whirlpool-download\scripts\runtime_config.json`
+### download_runtime_config.json（首次运行自动创建）
+位置：`E:\SKILLS\WHP-whirlpool-download\scripts\download_runtime_config.json`
 
 ### 密码加密存储
-位置：`C:\Users\qudin\.openclaw\workspace\skills\WHP-whirlpool-download\scripts\runtime_config\passwords\`
+位置：`E:\SKILLS\WHP-whirlpool-download\scripts\download_runtime_config\passwords\`
 - `scm_password.dat` — SCM 密码（AES-256 加密）
 - `oa_password.dat` — OA 密码（AES-256 加密）
 - `fanruan_password.dat` — 帆软密码（AES-256 加密）
@@ -148,7 +148,7 @@ py scripts/secure_config.py
 
 ## 浏览器
 
-- 使用 msedge（headless=False 可见模式）
+- 使用 msedge（无头模式，默认不显示浏览器窗口；调试或手动输验证码时加 `--visible`）
 - 每个系统共享同一浏览器实例
 - Cookie 持久化，下次运行无需重新登录（12小时内有效）
 - 完成后自动关闭浏览器
@@ -160,7 +160,7 @@ py scripts/secure_config.py
 | `scripts/run.js` | Node.js 入口，解析用户指令并调用 Python |
 | `scripts/unified_report_downloader.py` | Python 主程序（SCM+OA+帆软统一下载） |
 | `scripts/whirlpool_common.py` | 公共模块（浏览器创建、日志、密码编解码） |
-| `scripts/secure_config.py` | 安全配置（AES-256加密密码设置/管理） |
+| `scripts/download_secure_config.py` | 安全配置（AES-256加密密码设置/管理） |
 | `scripts/config_example.py` | 配置模板（首次运行参考） |
 
 ## 异常处理
@@ -175,5 +175,5 @@ py scripts/secure_config.py
 
 - SCM模块已改用优化版逻辑（ExtJS API导航 + 齐射收网 + 网格直提）
 - 原项目路径：`e:\whirlpool-china\`
-- 技能路径：`C:\Users\qudin\.openclaw\workspace\skills\WHP-whirlpool-download\`
+- 技能路径：`E:\SKILLS\WHP-whirlpool-download\`
 - 如果 SCM/OA/帆软页面元素变化，需更新 `unified_report_downloader.py` 中的选择器

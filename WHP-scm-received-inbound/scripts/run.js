@@ -4,7 +4,7 @@
  *
  * 使用方式:
  *   node run.js                // 导出当月已接收送货单 → 已入库.xlsx
- *   node run.js --headless     // 无头模式
+ *   node run.js --visible      // 可见模式（默认无头）
  *   node run.js --help         // 查看帮助
  */
 const { execSync } = require("child_process");
@@ -32,31 +32,31 @@ function main() {
     - maxsearchrltcmt   = 99999
 
 用法:
-  node run.js                默认可见模式
-  node run.js --headless     无头模式
+  node run.js                默认无头模式
+  node run.js --visible      可见模式（调试/手动输验证码时用）
   node run.js --help         帮助
 
 首次运行:
   密码沿用 WHP-whirlpool-download 技能的 scm_password.dat，
-  如需重设可运行: py ../WHP-whirlpool-download/scripts/secure_config.py
+  如需重设可运行: py ../WHP-whirlpool-download/scripts/download_secure_config.py
     `);
     return;
   }
 
-  // Parse --headless
-  const headless = args.includes("--headless");
+  // Parse --visible
+  const visible = args.includes("--visible");
 
   console.log(`\n=== 已接收入库导出工具 V1.3 ===`);
   console.log(`Python 脚本: ${PYTHON_SCRIPT}`);
   console.log(`\n`);
 
   try {
-    const cmd = `"${VENV_PYTHON}" "${PYTHON_SCRIPT}"${headless ? " --headless" : ""}`;
+    const cmd = `"${VENV_PYTHON}" "${PYTHON_SCRIPT}"${visible ? " --visible" : ""}`;
     const result = execSync(cmd, {
       cwd: SCRIPT_DIR,
       stdio: "inherit",
       timeout: 600000, // 10 min
-      env: { ...process.env, PYTHONIOENCODING: "utf-8", PYTHONUNBUFFERED: "1", WP_HEADLESS: headless ? "1" : "0" },
+      env: { ...process.env, PYTHONIOENCODING: "utf-8", PYTHONUNBUFFERED: "1", WP_HEADLESS: visible ? "0" : "1" },
     });
     console.log("\n[OK] 已接收入库导出完毕");
     process.exit(0);

@@ -21,7 +21,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from playwright.async_api import async_playwright
 
-from secure_config import ConfigManager, SecurePasswordManager
+from huihuo_secure_config import load_scm_credentials
 
 # ═══════════════════════════════════════════════════════════
 # 日志初始化：控制台 + 文件双写，自动轮转
@@ -53,44 +53,14 @@ if sys.platform == 'win32':
 SCM_URL = "https://scm.whirlpool-china.com:7580/websrm/"
 
 # ============================================================
-# 从 runtime_config.json 加载配置
+# �?huihuo_runtime_config.json 加载配置
 # ============================================================
 def _load_runtime_config():
-    """从 runtime_config.json 读取 SCM 配置，优先使用 AES-256 加密密码"""
-    cfg = {"username": "your_username", "password": ""}
+    """�?scripts/huihuo_runtime_config.json 读取账号，密码来�?AES-256 加密文件"""
     project_dir = os.path.dirname(os.path.abspath(__file__))
-    config_path = os.path.join(project_dir, "runtime_config.json")
-    if os.path.exists(config_path):
-        try:
-            with open(config_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            scm = data.get("scm", {})
-            if scm.get("username"):
-                cfg["username"] = scm["username"]
-        except Exception:
-            pass
-
-    # 优先从 AES-256 加密文件读取密码，回退到配置文件值
-    try:
-        config_manager = ConfigManager(config_path)
-        secure_manager = SecurePasswordManager(config_manager)
-        password = secure_manager.load_password("scm")
-        if password:
-            cfg["password"] = password
-            return cfg
-    except Exception:
-        pass
-    # 回退：从 runtime_config.json 读取
-    if os.path.exists(config_path):
-        try:
-            with open(config_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            scm = data.get("scm", {})
-            if scm.get("password"):
-                cfg["password"] = scm["password"]
-        except Exception:
-            pass
-    return cfg
+    config_path = os.path.join(project_dir, "huihuo_runtime_config.json")
+    username, password = load_scm_credentials(config_path)
+    return {"username": username, "password": password}
 
 _cfg = _load_runtime_config()
 USERNAME = _cfg["username"]
@@ -1048,8 +1018,8 @@ async def release_huihuo(page, first_material):
 # 创建浏览器实例
 # ============================================================
 
-async def create_browser(playwright, headless=False):
-    """创建Edge浏览器实例（默认可见模式，--headless 启用无头）"""
+async def create_browser(playwright, headless=True):
+    """创建Edge浏览器实例（默认无头模式，--visible 显示窗口）"""
     browser = await playwright.chromium.launch(
         channel="msedge", headless=headless,
         args=["--disable-blink-features=AutomationControlled",
@@ -1068,7 +1038,7 @@ async def create_browser(playwright, headless=False):
 # 主流程
 # ============================================================
 
-async def run_main(items, headless=False):
+async def run_main(items, headless=True):
     """
     直通批量导入模式：登录 → 批量导入 → 逐条发放
     - 导入：一次导航，逐行新增填数据，统一保存审核
@@ -1250,7 +1220,7 @@ async def main():
     import argparse
     parser = argparse.ArgumentParser(description="回货计划导入发放")
     parser.add_argument("--data", help="料号数量数据，格式: '料号1 数量1 备注1, 料号2 数量2'")
-    parser.add_argument("--headless", action="store_true", help="无头模式运行（默认可见模式）")
+    parser.add_argument("--visible", action="store_true", help="可见模式运行（默认无头）")
 
     args = parser.parse_args()
 
@@ -1313,7 +1283,7 @@ async def main():
     if not args.data:
         input("\n确认无误后按 Enter 开始...")
 
-    success = await run_main(items, headless=args.headless)
+    success = await run_main(items, headless=not args.visible)
 
     if not success:
         print("\n[FAIL] 回货流程完成（有失败项）")

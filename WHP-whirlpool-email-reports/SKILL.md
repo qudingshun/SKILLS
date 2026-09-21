@@ -40,7 +40,7 @@ node skills/WHP-whirlpool-email-reports/scripts/download-reports.cjs
 - ✅ 定时任务每次执行后自动更新时间戳
 
 ### 链式任务执行流程（每日 09:00）
-1. `node skills/WHP-whirlpool-email-reports/scripts/download-reports.js` — 下载三份邮件报表
+1. `node skills/WHP-whirlpool-email-reports/scripts/download-reports.cjs` — 下载三份邮件报表
 2. `python E:\whirlpool-china\inventory_daily_report.py` — 更新产销存日报
 
 ## 技术要点
@@ -52,14 +52,14 @@ node skills/WHP-whirlpool-email-reports/scripts/download-reports.cjs
 
 ## 凭证管理
 - 邮箱主机/端口/用户名在脚本内写死
-- **密码**读取环境变量 `MAIL_PASS`（脚本内含硬编码密码作为回退，推荐优先使用环境变量）
+- **密码**仅读取环境变量 `MAIL_PASS`（脚本内无硬编码密码，未设置则无法登录）
 - 如需改密码：`[Environment]::SetEnvironmentVariable('MAIL_PASS', '新密码', 'User')` + 重启 Gateway
 
 ## 脚本列表
 | 脚本 | 功能 |
 |------|------|
 | `scripts/download-reports.cjs` | **下载三份标准报表** + 智能时间过滤（仅扫描指定日期范围） |
-| `scripts/email-briefing.js` | (旧) 纯文本简报输出（已废弃，可清理） |
+| `scripts/email-briefing.js` | (旧) 纯文本简报输出（已废弃，已移至 `_backup/`） |
 | `scripts/rebuild-orders-excel.js` | 提取订单信息 → 独立 Excel（订单.xlsx） |
 | `scripts/expand-emails.js` | 提取单封邮件正文详情 |
 | `scripts/fetch-order-emails.js` | 抓取订单相关邮件 |

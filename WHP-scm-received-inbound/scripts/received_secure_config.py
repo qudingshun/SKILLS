@@ -31,7 +31,7 @@ except ImportError:
 class ConfigManager:
     """配置管理器 - 支持明文和加密两种模式"""
     
-    def __init__(self, config_file: str = "runtime_config.json"):
+    def __init__(self, config_file: str = "received_runtime_config.json"):
         self.config_file = config_file
         self.configs: Dict[str, Any] = {}
         self._load_config()
@@ -54,26 +54,8 @@ class ConfigManager:
             "scm": {
                 "username": "hsa697",
                 "password": "",
-                "audit_date": "2026-04-01",
-                "dir_task1": r"E:\OneDrive\桌面\桌面临时文件\PMC 小工具\回货引用文件\加载文件\scm_task1",
-                "dir_task2": r"E:\OneDrive\桌面\桌面临时文件\PMC 小工具\回货引用文件\加载文件\scm_task2",
-                "dir_task3": r"E:\OneDrive\桌面\桌面临时文件\PMC 小工具\回货引用文件\加载文件\scm_task3",
-                "dir_task4": r"E:\OneDrive\桌面\桌面临时文件\PMC 小工具\回货引用文件\加载文件\scm_task4",
-                "dir_task5": r"E:\OneDrive\桌面\桌面临时文件\PMC 小工具\回货引用文件\加载文件\scm_task5",
-            },
-            "fanruan": {
-                "username": "HSA697",
-                "password": "",
-                "factory_code": "664",
-                "dir_bom": r"D:\360 安全浏览器下载\bom",
-                "dir_report1": r"E:\OneDrive\桌面\桌面临时文件\PMC 小工具\回货引用文件\加载文件\report1",
-                "dir_report2": r"E:\OneDrive\桌面\桌面临时文件\PMC 小工具\回货引用文件\加载文件\report2",
-                "dir_stock": r"E:\OneDrive\桌面\桌面临时文件\PMC 小工具\回货引用文件\加载文件\stock",
-            },
-            "oa": {
-                "username": "hsa697",
-                "factory_code": "M03",
-                "plan_dir": r"E:\OneDrive\桌面\桌面临时文件\PMC 小工具\回货引用文件\加载文件\oa_plan",
+                "org_code": "M03",
+                "dir_export": r"E:\OneDrive\桌面\桌面临时文件\PMC小工具\回货引用文件\加载文件",
             }
         }
         with open(self.config_file, 'w', encoding='utf-8') as f:
@@ -227,7 +209,7 @@ if __name__ == "__main__":
     print("  安全密码设置工具")
     print("=" * 60)
     
-    config_file = "runtime_config.json"
+    config_file = "received_runtime_config.json"
     manager = ConfigManager(config_file)
     secure_manager = SecurePasswordManager(manager)
     

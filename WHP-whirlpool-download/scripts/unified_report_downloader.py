@@ -13,7 +13,7 @@
 ╚══════════════════════════════════════════════════════╝
 
 用法:
-  先运行 python secure_config.py 输入密码加密存储
+  先运行 python download_secure_config.py 输入密码加密存储
   再运行 python unified_report_downloader.py 执行下载
 """
 
@@ -40,7 +40,7 @@ from whirlpool_common import (
     STORAGE_FILE_SCM, STORAGE_DIR,
     check_dependencies as _check_deps,
 )
-from secure_config import ConfigManager, SecurePasswordManager
+from download_secure_config import ConfigManager, SecurePasswordManager
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -56,6 +56,13 @@ REPORT1_URL = f"{FANRUAN_BASE_URL}/v10/entry/access/ece5dd7b-bb69-4072-8b54-807f
 REPORT2_URL = f"{FANRUAN_BASE_URL}/v10/entry/access/a739cf32-fc07-4a34-905f-43af84e0b4f9?width=1680&height=856"
 BOM_REPORT_URL = f"{FANRUAN_BASE_URL}/v10/entry/access/old-platform-reportlet-entry-366?width=1467&height=843"
 STOCK_REPORT_URL = f"{FANRUAN_BASE_URL}/v10/entry/access/old-platform-reportlet-entry-573?width=2320&height=1376"
+
+# 帆软导出等待时长（2026-09-19 调长：报表1「已发放工单推式料发料明细」连续报
+# 「JS导出超时 / 文件检测超时」，原值 12s 与 18s 不够用）
+#   一次导出 = JS_CB_TIMEOUT + POLL_TRIES×POLL_INTERVAL，最坏 120s + 120s = 240s
+FANRUAN_EXPORT_JS_TIMEOUT = 120        # JS 下载回调等待，原 12
+FANRUAN_EXPORT_POLL_INTERVAL = 0.3     # 落盘轮询间隔（秒），原 0.3
+FANRUAN_EXPORT_POLL_TRIES = 400        # 落盘轮询次数，原 60（0.3×60=18s → 0.3×400=120s）
 
 
 # OA 年月自动计算
@@ -226,7 +233,7 @@ class SCMSystem:
         username = self.config_manager.get_sc_config("username", "hsa697")
         password = self.secure_manager.load_password("scm") or self.config_manager.get_sc_config("password")
         if not password:
-            safe_print("[SCM] [FAIL] 密码未找到，请先运行 secure_config.py")
+            safe_print("[SCM] [FAIL] 密码未找到，请先运行 download_secure_config.py")
             return False
 
         safe_print("  [登录] 打开SCM登录页...")
@@ -1271,7 +1278,7 @@ class OASystem:
         username = self.config_manager.get_oa_config("username", "hsa697")
         password = self.secure_manager.load_password("oa") or self.config_manager.get_oa_config("password")
         if not password:
-            safe_print("[OA] [FAIL] 密码未找到，请先运行 secure_config.py")
+            safe_print("[OA] [FAIL] 密码未找到，请先运行 download_secure_config.py")
             return False
 
         for attempt in range(3):
@@ -1591,7 +1598,7 @@ class FanruanSystem:
         if "login" in page.url.lower():
             safe_print("  [帆软] 检测到登录页...")
             if not username or not password:
-                safe_print("  [帆软] 密码未找到，请先运行 secure_config.py")
+                safe_print("  [帆软] 密码未找到，请先运行 download_secure_config.py")
                 return False
             # 先尝试 API 登录
             if await self._login_via_api(context, page, username, password):
@@ -1710,7 +1717,7 @@ class FanruanSystem:
             try:
                 await page.evaluate("_g().exportReportToExcel('simple')")
                 try:
-                    dl = await asyncio.wait_for(future, timeout=12)
+                    dl = await asyncio.wait_for(future, timeout=FANRUAN_EXPORT_JS_TIMEOUT)
                     if keep_original_name:
                         fname = dl.suggested_filename
                         if not fname.endswith('.xlsx'):
@@ -1729,8 +1736,8 @@ class FanruanSystem:
                 page.remove_listener('download', on_dl)
 
             # 文件轮询检测
-            for _ in range(60):
-                await asyncio.sleep(0.3)
+            for _ in range(FANRUAN_EXPORT_POLL_TRIES):
+                await asyncio.sleep(FANRUAN_EXPORT_POLL_INTERVAL)
                 cur = set(os.listdir(download_dir))
                 new = cur - existing
                 xlsx_new = [f for f in new if f.endswith(".xlsx") and not f.endswith(".crdownload") and not f.endswith(".tmp")]
@@ -2063,7 +2070,7 @@ class ReportDownloader:
         try:
             # 创建浏览器
             safe_print("\n[启动] 初始化浏览器...")
-            p, browser, context, page = await create_browser(headless=False)
+            p, browser, context, page = await create_browser()
 
             # ── Phase 1: SCM ──
             safe_print("\n" + "=" * 60)
@@ -2126,7 +2133,7 @@ class ReportDownloader:
 
         try:
             safe_print("\n[启动] 初始化浏览器...")
-            p, browser, context, page = await create_browser(headless=False)
+            p, browser, context, page = await create_browser()
             await run_func(page, context)
         except Exception as e:
             safe_print(f"\n[错误] 执行失败：{e}")

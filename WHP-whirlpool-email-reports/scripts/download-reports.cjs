@@ -18,7 +18,7 @@ const path = require('path');
 
 const CFG = {
   user: 'dingshun_qu@whirlpool-china.com',
-  pass: process.env.MAIL_PASS || '#***REMOVED***',
+  pass: process.env.MAIL_PASS || '',
   host: 'imap.qiye.163.com', port: 143,
 };
 

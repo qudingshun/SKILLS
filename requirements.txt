@@ -13,7 +13,7 @@ numpy
 # Excel COM 自动化（Windows，inventory_daily / reporting-tools 使用）
 pywin32
 
-# OCR 验证码识别（WHP-scm-huihuo-import / WHP-whirlpool-download）
+# OCR 验证码识别（WHP-scm-huihuo-import / WHP-scm-received-inbound / WHP-whirlpool-download）
 ddddocr
 
 # SCM 登录加密

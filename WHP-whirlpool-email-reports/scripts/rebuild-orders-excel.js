@@ -6,7 +6,7 @@ const { simpleParser } = require('mailparser');
 const iconv = require('iconv-lite');
 const XLSX = require('xlsx');
 
-const CFG = {user:'dingshun_qu@whirlpool-china.com',pass:'#***REMOVED***',host:'imap.qiye.163.com',port:143};
+const CFG = {user:'dingshun_qu@whirlpool-china.com',pass:process.env.MAIL_PASS||'',host:'imap.qiye.163.com',port:143};
 
 // IMAP helpers
 let tag=0,pending={},buf='',responses=[],litRem=0,litD='',inLit=false;

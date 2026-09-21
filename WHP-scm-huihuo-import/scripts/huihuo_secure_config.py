@@ -13,7 +13,39 @@
 import hashlib
 import json
 import os
+import sys
 from typing import Any, Dict, Optional
+
+
+def load_scm_credentials(config_file: Optional[str] = None):
+    """读取 SCM 账号密码，返回 (username, password)。
+
+    账号取自 huihuo_runtime_config.json -> scm.username，
+    密码优先从 AES-256 加密文件 (huihuo_runtime_config/passwords/scm_password.dat) 读取。
+    凭据缺失/仍为占位符时打印指引并 sys.exit(1)。
+    """
+    if config_file is None:
+        config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "huihuo_runtime_config.json")
+    data = {}
+    if os.path.exists(config_file):
+        try:
+            with open(config_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception:
+            pass
+    scm = data.get("scm", {})
+    username = scm.get("username", "") or ""
+    password = ""
+    try:
+        config_manager = ConfigManager(config_file)
+        secure_manager = SecurePasswordManager(config_manager)
+        password = secure_manager.load_password("scm") or ""
+    except Exception:
+        pass
+    if not username or username == "your_username" or not password:
+        print("[配置错误] SCM 账号/密码未配置，请运行：py huihuo_secure_config.py [--username <账号>] --set-password <密码>")
+        sys.exit(1)
+    return username, password
 
 
 # ═══════════════════════════════════════════════════════
@@ -23,7 +55,7 @@ from typing import Any, Dict, Optional
 class ConfigManager:
     """配置管理器 - 支持明文和加密两种模式"""
     
-    def __init__(self, config_file: str = "runtime_config.json"):
+    def __init__(self, config_file: str = "huihuo_runtime_config.json"):
         self.config_file = config_file
         self.configs: Dict[str, Any] = {}
         self._load_config()
@@ -44,9 +76,10 @@ class ConfigManager:
         """创建默认配置"""
         default = {
             "scm": {
-                "username": "your_username",
+                "username": "hsa697",
                 "password": "",
-                "audit_date": "2026-04-01",
+                "audit_date": "2026-08-21",
+                "shipment_date_start": "2026-09-01",
                 "dir_task1": r"E:\OneDrive\桌面\桌面临时文件\PMC小工具\回货引用文件\加载文件",
                 "dir_task2": r"E:\OneDrive\桌面\桌面临时文件\PMC小工具\回货引用文件\加载文件",
                 "dir_task3": r"E:\OneDrive\桌面\桌面临时文件\PMC小工具\回货引用文件\加载文件",
@@ -175,21 +208,99 @@ class SecurePasswordManager:
 
 
 # ═══════════════════════════════════════════════════════
-# 独立运行：加密密码设置工具
+# 独立运行：SCM 配置 / 密码设置工具
+#
+# 用法（配置文件固定为本文件所在目录的 huihuo_runtime_config.json）：
+#   py huihuo_secure_config.py                                    # 交互式配置用户名+密码
+#   py huihuo_secure_config.py --username hsa697 --password xxxx  # 命令行配置（适合自动化）
+#   py huihuo_secure_config.py --set-password xxxx                # 仅设置/修改密码
+#   py huihuo_secure_config.py --clear-password                   # 清除已存密码
+#   py huihuo_secure_config.py --verify                           # 校验配置是否完整可用
 # ═══════════════════════════════════════════════════════
 
 if __name__ == "__main__":
-    print("\n" + "=" * 60)
-    print("  SCM 安全密码设置工具")
-    print("=" * 60)
-    
-    config_file = "runtime_config.json"
-    manager = ConfigManager(config_file)
+    import argparse
+    import sys
+
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
+    # 配置文件固定锚定到脚本自身所在目录，
+    # 保证无论从哪里运行都写入 scripts/huihuo_runtime_config.json
+    # 与 scripts/huihuo_runtime_config/passwords/scm_password.dat
+    _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+    _CONFIG_FILE = os.path.join(_SCRIPT_DIR, "huihuo_runtime_config.json")
+
+    parser = argparse.ArgumentParser(description="SCM 回货技能 配置/密码设置工具")
+    parser.add_argument("--username", help="设置 SCM 用户名（写入 huihuo_runtime_config.json）")
+    parser.add_argument("--set-password", "--password", dest="password", help="设置 SCM 密码（AES-256 加密保存）")
+    parser.add_argument("--clear-password", action="store_true", help="清除已加密保存的密码")
+    parser.add_argument("--verify", action="store_true", help="只校验配置是否完整可用，不做修改")
+    args = parser.parse_args()
+
+    manager = ConfigManager(_CONFIG_FILE)
     secure_manager = SecurePasswordManager(manager)
-    
-    scm_password = input("\n请输入 SCM 密码（留空跳过）：").strip()
-    if scm_password:
-        secure_manager.save_password("scm", manager.get_sc_config("username", "your_username"), scm_password)
-        print("[OK] SCM 密码已加密存储")
-    
-    print("\n密码设置完成！")
+
+    def _show_status(final: bool = False):
+        username = manager.get_sc_config("username", "")
+        has_pw = secure_manager.load_password("scm") is not None
+        print(f"\n[{'配置完成' if final else '当前配置'}]")
+        print(f"  配置文件        : {_CONFIG_FILE}")
+        print(f"  SCM 用户名      : {username or '(未设置)'}")
+        print(f"  SCM 密码        : {'已加密存储' if has_pw else '未设置'}")
+        print(f"  密码存储目录    : {secure_manager._password_dir}")
+
+    # ============ 命令行参数模式（非交互） ============
+    if args.verify:
+        _show_status()
+        ok = True
+        username = manager.get_sc_config("username", "")
+        if not username or username == "your_username":
+            print("\n[WARN] 用户名未配置（仍为占位符 your_username）")
+            ok = False
+        if not secure_manager.load_password("scm"):
+            print("\n[WARN] SCM 密码未设置")
+            ok = False
+        print("\n[OK] 配置完整，SCM 可正常读取用户名与密码。" if ok else "\n[FAIL] 配置不完整，请重新配置。")
+        sys.exit(0 if ok else 1)
+
+    if args.username:
+        manager.set_sc_config("username", args.username.strip())
+    if args.clear_password:
+        secure_manager.clear_password("scm")
+    elif args.password:
+        username = manager.get_sc_config("username", "") or "your_username"
+        secure_manager.save_password("scm", username, args.password)
+
+    if args.username or args.clear_password or args.password:
+        _show_status(final=True)
+        sys.exit(0)
+
+    # ============ 交互式模式（默认） ============
+    print("\n" + "=" * 60)
+    print("  SCM 回货 配置 / 安全密码设置工具")
+    print("=" * 60)
+    _show_status()
+
+    new_username = input("\nSCM 用户名（回车保持不变）：").strip()
+    if new_username:
+        manager.set_sc_config("username", new_username)
+
+    print("\n密码操作：")
+    print("  1 = 设置/修改密码")
+    print("  2 = 清除密码")
+    print("  0 = 跳过（回车）")
+    choice = input("请选择 [0/1/2]：").strip()
+    if choice == "1":
+        pw = input("请输入 SCM 密码：").strip()
+        if pw:
+            manager.set_sc_config("username", manager.get_sc_config("username", "") or "your_username")
+            secure_manager.save_password("scm", manager.get_sc_config("username", ""), pw)
+    elif choice == "2":
+        secure_manager.clear_password("scm")
+
+    print("\n" + "=" * 60)
+    _show_status(final=True)
+    print("\n配置完成！")

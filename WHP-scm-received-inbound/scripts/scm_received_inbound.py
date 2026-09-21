@@ -20,7 +20,7 @@
 
 用法:
   node run.js
-  python scm_received_inbound.py [--headless]
+  python scm_received_inbound.py [--visible]
 """
 
 import argparse
@@ -45,7 +45,7 @@ from whirlpool_common import (
     save_storage_state, load_storage_state,
     STORAGE_FILE_SCM, check_dependencies as _check_deps,
 )
-from secure_config import ConfigManager, SecurePasswordManager
+from received_secure_config import ConfigManager, SecurePasswordManager
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -180,7 +180,7 @@ class ReceivedInboundExport:
         username = self.config_manager.get_sc_config("username", "hsa697")
         password = self.secure_manager.load_password("scm") or self.config_manager.get_sc_config("password")
         if not password:
-            safe_print("[SCM] [FAIL] 密码未找到，请先运行 secure_config.py")
+            safe_print("[SCM] [FAIL] 密码未找到，请先运行 received_secure_config.py")
             return False
 
         safe_print("  [登录] 打开SCM登录页...")
@@ -906,7 +906,7 @@ class ReceivedInboundExport:
 
 def _parse_args():
     parser = argparse.ArgumentParser(description="已接收入库导出工具 V1.3")
-    parser.add_argument("--headless", action="store_true", help="无头模式（默认可见，便于人工介入验证码）")
+    parser.add_argument("--visible", action="store_true", help="可见模式（默认无头，调试或手动输验证码时用）")
     return parser.parse_args()
 
 
@@ -916,7 +916,7 @@ async def main():
         sys.exit(1)
 
     args = _parse_args()
-    config_manager = ConfigManager(os.path.join(os.path.dirname(os.path.abspath(__file__)), "runtime_config.json"))
+    config_manager = ConfigManager(os.path.join(os.path.dirname(os.path.abspath(__file__)), "received_runtime_config.json"))
     secure_manager = SecurePasswordManager(config_manager)
     exporter = ReceivedInboundExport(config_manager, secure_manager)
 
@@ -928,7 +928,7 @@ async def main():
         safe_print("  功能：SCM 送货单查询（已接收）→ 已入库.xlsx")
         safe_print("=" * 60)
         safe_print("\n[启动] 初始化浏览器...")
-        p, browser, context, page = await create_browser(headless=args.headless)
+        p, browser, context, page = await create_browser(headless=not args.visible)
         ok = await exporter.run(page, context)
         safe_print(f"\n[结果] {'[OK] 导出完成' if ok else '[FAIL] 导出未完成'}")
     except Exception as e:

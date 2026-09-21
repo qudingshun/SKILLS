@@ -1,2 +1,0 @@
-# v2free-checkin 依赖（共用 E:\SKILLS\.venv）
-selenium

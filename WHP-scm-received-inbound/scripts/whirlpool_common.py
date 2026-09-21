@@ -156,10 +156,10 @@ def decode_local_password(encoded_text):
 
 # ── 浏览器创建 ────────────────────────────────────────────────────────
 
-async def create_browser(headless: bool = False):
-    # 支持环境变量 WP_HEADLESS 覆盖（run.js --headless 时设为 "1"）
-    if str(os.environ.get("WP_HEADLESS", "")).strip() == "1":
-        headless = True
+async def create_browser(headless: bool = True):
+    # 支持环境变量 WP_HEADLESS 覆盖（run.js --visible 时设为 "0"）
+    if str(os.environ.get("WP_HEADLESS", "")).strip() == "0":
+        headless = False
     p = await async_playwright().start()
     browser = await p.chromium.launch(
         channel="msedge", headless=headless,

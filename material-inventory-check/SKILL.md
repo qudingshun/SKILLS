@@ -1,3 +1,23 @@
+---
+name: material-inventory-check
+description: >
+  查料号 / 惠而浦物料多表查询 — 按料号汇总 PMC 报表的库存、送货单、已报检、
+  送货通知单、采购订单、回货计划、请购单数量。
+
+  Trigger keywords: 查料号, 帮我查料号, 看下这个料, 物料查询, 库存查询,
+  material inventory check, PMC 查询
+
+  Usage examples:
+  - "查料号 ST1TN40100SE-"
+  - "帮我查料号 70C012345"
+  - "查料号 ST1TN40100SE- 看下这个料"
+metadata:
+  {
+    "openclaw":
+      { "os": ["win32"], "requires": { "bins": ["node", "py"] } },
+  }
+---
+
 # 查料号（惠而浦物料多表查询）
 
 按料号综合查询惠而浦 PMC 多张报表，汇总某个物料的库存、送货、报检、未制单量、可发布量、回货未分配量、请购数量。

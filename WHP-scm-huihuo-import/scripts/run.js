@@ -9,9 +9,11 @@
 const { execSync } = require("child_process");
 const path = require("path");
 
+const fs = require("fs");
 const SCRIPT_DIR = __dirname;
 const PYTHON_SCRIPT = path.join(SCRIPT_DIR, "huihuo_scm.py");
-const VENV_PYTHON = path.resolve(SCRIPT_DIR, "..", "..", ".venv", "Scripts", "python.exe");
+// 固定使用共享虚拟环境 E:\SKILLS\.venv（依赖完整：playwright/ddddocr/cryptography 等）
+const VENV_PYTHON = "E:\\SKILLS\\.venv\\Scripts\\python.exe";
 
 function main() {
   const args = process.argv.slice(2);
@@ -22,8 +24,8 @@ function main() {
 SCM 回货计划导入 & 发放 v2.2
 
 用法:
-  node run.js --material <料号> --qty <数量> [--date <日期>] [--remarks <备注>] [--headless]
-  node run.js --data "<料号1> <数量1> [日期1] [备注1], <料号2> <数量2> [日期2] [备注2]" [--headless]
+  node run.js --material <料号> --qty <数量> [--date <日期>] [--remarks <备注>] [--visible]
+  node run.js --data "<料号1> <数量1> [日期1] [备注1], <料号2> <数量2> [日期2] [备注2]" [--visible]
 
 示例:
   node run.js --material 70C012345 --qty 5
@@ -33,7 +35,7 @@ SCM 回货计划导入 & 发放 v2.2
   node run.js --data "70C11099 2 售后配件, ABC 3"
   node run.js --data "70C11099 2 2026-06-30, ABC 3"
   node run.js --data "70C11099 2 2026-06-30 紧急补货, ABC 3"
-  node run.js --headless --material 70C012345 --qty 5
+  node run.js --visible --material 70C012345 --qty 5
     `);
     return;
   }
@@ -98,17 +100,24 @@ SCM 回货计划导入 & 发放 v2.2
     process.exit(1);
   }
 
+  if (!fs.existsSync(VENV_PYTHON)) {
+    console.error(`[ERR] 找不到共享虚拟环境: ${VENV_PYTHON}`);
+    console.error(`      请确认 E:\\SKILLS\\.venv 存在，或运行: py scripts/install_deps.py`);
+    process.exit(1);
+  }
+
   console.log(`\n=== SCM 回货计划导入 & 发放 v2.2 ===`);
-  const headlessMode = args.includes("--headless");
+  const visibleMode = args.includes("--visible");
   console.log(`数据: ${dataArg}`);
-  console.log(`模式: ${headlessMode ? "无头" : "可见"}`);
+  console.log(`模式: ${visibleMode ? "可见" : "无头"}`);
+  console.log(`Python: ${VENV_PYTHON}`);
   console.log(`Python 脚本: ${PYTHON_SCRIPT}\n`);
 
-  const headlessArg = headlessMode ? " --headless" : "";
+  const visibleArg = visibleMode ? " --visible" : "";
 
   try {
     const result = execSync(
-      `"${VENV_PYTHON}" "${PYTHON_SCRIPT}" --data "${dataArg}"${headlessArg}`,
+      `"${VENV_PYTHON}" "${PYTHON_SCRIPT}" --data "${dataArg}"${visibleArg}`,
       {
         cwd: SCRIPT_DIR,
         stdio: "inherit",

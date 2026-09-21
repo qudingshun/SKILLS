@@ -4,7 +4,7 @@ const path = require("path");
 
 const SCRIPT_DIR = __dirname;
 const PYTHON_SCRIPT = path.join(SCRIPT_DIR, "..", "openclaw_skill.py");
-const VENV_PYTHON = path.resolve(SCRIPT_DIR, "..", ".venv", "Scripts", "python.exe");
+const VENV_PYTHON = path.resolve(SCRIPT_DIR, "..", "..", ".venv", "Scripts", "python.exe");
 
 function main() {
   const args = process.argv.slice(2);

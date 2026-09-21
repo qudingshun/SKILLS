@@ -5,7 +5,7 @@
 =====================================================
 
 使用方法：
-1. 复制此文件为 runtime_config.json
+1. 复制此文件为 download_runtime_config.json
 2. 修改以下字段为你的实际信息
 3. 运行 unified_report_downloader.py
 
@@ -34,23 +34,24 @@ SCM_CONFIG = {
     
     # 密码建议：使用加密方式存储，不要明文保存！
     # 选项 1: 直接填写明文（不推荐）
-    # "password": "***REMOVED***"
+    # "password": "<your_password>"
     
     # 选项 2: 使用加密（推荐）- 运行脚本后会自动生成加密密码
     # 首次运行时，系统会提示你输入明文密码进行加密存储
     "password": "",                    # ← 留空，首次运行将自动加密
     
-    # ── 查询参数 ────────────────────────────────────────
-    "audit_date": "2026-04-01",        # 请购单审核日期（仅任务 5 需要）
-    
-    "shipment_date_start": "2026-07-17",  # 送货单产生开始日期（任务 2 送货单查询需要，截至日期自动取当天）
-    
-    # ── 下载目录配置 ────────────────────────────────────
-    "dir_task1": r"E:\OneDrive\桌面\桌面临时文件\PMC 小工具\回货引用文件\加载文件\scm_task1",      # 送货通知查询结果目录
-    "dir_task2": r"E:\OneDrive\桌面\桌面临时文件\PMC 小工具\回货引用文件\加载文件\scm_task2",      # 送货单查询结果目录  
-    "dir_task3": r"E:\OneDrive\桌面\桌面临时文件\PMC 小工具\回货引用文件\加载文件\scm_task3",      # PO 未结量汇总查询结果目录
-    "dir_task4": r"E:\OneDrive\桌面\桌面临时文件\PMC 小工具\回货引用文件\加载文件\scm_task4",      # 回货计划发放结果目录
-    "dir_task5": r"E:\OneDrive\桌面\桌面临时文件\PMC 小工具\回货引用文件\加载文件\scm_task5",      # 请购单查询结果目录
+# ── 查询参数 ────────────────────────────────────────
+     "audit_date": "2026-08-21",        # 请购单审核日期（仅任务 5 需要）
+     
+     "shipment_date_start": "2026-09-01",  # 送货单产生开始日期（任务 2 送货单查询需要，截至日期自动取当天）
+     
+     # ── 下载目录配置 ────────────────────────────────────
+     # 注：实际运行时任务 1~5 共用同一基础目录
+     "dir_task1": r"E:\OneDrive\桌面\桌面临时文件\PMC小工具\回货引用文件\加载文件",      # 送货通知查询结果目录
+     "dir_task2": r"E:\OneDrive\桌面\桌面临时文件\PMC小工具\回货引用文件\加载文件",      # 送货单查询结果目录  
+     "dir_task3": r"E:\OneDrive\桌面\桌面临时文件\PMC小工具\回货引用文件\加载文件",      # PO 未结量汇总查询结果目录
+     "dir_task4": r"E:\OneDrive\桌面\桌面临时文件\PMC小工具\回货引用文件\加载文件",      # 回货计划发放结果目录
+     "dir_task5": r"E:\OneDrive\桌面\桌面临时文件\PMC小工具\回货引用文件\加载文件",      # 请购单查询结果目录
     
     # ── 可选：自定义 SCM URL（默认使用 https://scm.whirlpool-china.com:7580/websrm/）
     # "custom_url": ""
@@ -70,21 +71,30 @@ FANRUAN_CONFIG = {
     "factory_code": "664",            # 三工厂代码
     
     # ── 下载目录配置 ────────────────────────────────────
-    "dir_bom": r"D:\360 安全浏览器下载\bom",         # BOM 循环查询结果目录
-    "dir_report1": r"E:\OneDrive\桌面\桌面临时文件\PMC 小工具\回货引用文件\加载文件\report1", # 已发放工单推式料发料明细目录
-    "dir_report2": r"E:\OneDrive\桌面\桌面临时文件\PMC 小工具\回货引用文件\加载文件\report2", # SCM 转订单无效清单目录  
-    "dir_stock": r"E:\OneDrive\桌面\桌面临时文件\PMC 小工具\回货引用文件\加载文件\stock",     # 库存报表目录
-    
-    # ── OA 物料编码来源（仅 BOM 任务需要）───────────────
-    # 如果 BOM 循环查询需要读取物料编码，可指定 Excel 路径
-    "oa_plan_dir": r"E:\OneDrive\桌面\桌面临时文件\PMC 小工具\回货引用文件\加载文件\oa_plan",   # 计划.xlsx 所在目录
+    "dir_bom": r"D:\360安全浏览器下载",                      # BOM 循环查询结果目录
+    "dir_report1": r"E:\OneDrive\桌面\桌面临时文件\PMC小工具\回货引用文件\加载文件", # 已发放工单推式料发料明细目录
+    "dir_report2": r"E:\OneDrive\桌面\桌面临时文件\PMC小工具\回货引用文件\加载文件", # SCM 转订单无效清单目录  
+    "dir_stock": r"E:\OneDrive\桌面\桌面临时文件\PMC小工具\回货引用文件\加载文件",   # 库存报表目录
 }
 
 # ═══════════════════════════════════════════════════════
-# OA 系统配置（可选）
+# OA 系统配置
 # ═══════════════════════════════════════════════════════
 OA_CONFIG = {
-    "plan_dir": r"E:\OneDrive\桌面\桌面临时文件\PMC 小工具\回货引用文件\加载文件\oa_plan",  # OA 计划文件所在目录（BOM 任务需要）
+    "username": "hsa697",                 # ← 修改为你的 OA 用户名
+    "factory_code": "M03",               # OA 工厂代码
+    "plan_dir": r"E:\OneDrive\桌面\桌面临时文件\PMC小工具\回货引用文件\加载文件",  # OA 计划文件所在目录（BOM 任务需要）
+}
+
+# ═══════════════════════════════════════════════════════
+# 邮件配置
+# ═══════════════════════════════════════════════════════
+MAIL_CONFIG = {
+    "host": "imap.qiye.163.com",
+    "port": 143,
+    "user": "dingshun_qu@whirlpool-china.com",
+    "password": "",                    # ← 留空，首次运行将自动加密
+    "base_dir": r"E:\OneDrive\桌面\生产情况日报",
 }
 
 # ═══════════════════════════════════════════════════════
@@ -92,18 +102,19 @@ OA_CONFIG = {
 # ═══════════════════════════════════════════════════════
 
 def save_config():
-    """将配置保存到 runtime_config.json"""
+    """将配置保存到 download_runtime_config.json"""
     config = {
         "scm": SCM_CONFIG,
         "fanruan": FANRUAN_CONFIG,
         "oa": OA_CONFIG,
+        "mail": MAIL_CONFIG,
         "created_at": datetime.now().isoformat(),
     }
     
-    with open("runtime_config.json", 'w', encoding='utf-8') as f:
+    with open("download_runtime_config.json", 'w', encoding='utf-8') as f:
         json.dump(config, f, ensure_ascii=False, indent=2)
     
-    print("[配置] 已保存至 runtime_config.json")
+    print("[配置] 已保存至 download_runtime_config.json")
 
 # ── 首次运行自动加密密码 ────────────────────────────────────────
 if __name__ == "__main__":
@@ -111,7 +122,7 @@ if __name__ == "__main__":
     
     # 检查是否第一次运行（没有现有配置文件）
     try:
-        with open("runtime_config.json", 'r', encoding='utf-8') as f:
+        with open("download_runtime_config.json", 'r', encoding='utf-8') as f:
             config = json.load(f)
             
         # 如果密码字段为空，提示用户加密
@@ -125,8 +136,8 @@ if __name__ == "__main__":
             if scm_password:
                 config["scm"]["password"] = scm_password
                 
-                from secure_config import SecurePasswordManager, ConfigManager
-                manager = ConfigManager("runtime_config.json")
+                from download_secure_config import SecurePasswordManager, ConfigManager
+                manager = ConfigManager("download_runtime_config.json")
                 secure_manager = SecurePasswordManager(manager)
                 
                 # 保存加密后的密码
@@ -138,8 +149,8 @@ if __name__ == "__main__":
             if fanruan_password:
                 config["fanruan"]["password"] = fanruan_password
                 
-                from secure_config import SecurePasswordManager, ConfigManager
-                manager = ConfigManager("runtime_config.json")
+                from download_secure_config import SecurePasswordManager, ConfigManager
+                manager = ConfigManager("download_runtime_config.json")
                 secure_manager = SecurePasswordManager(manager)
                 
                 # 保存加密后的密码

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-WHP-whirlpool-download 一键依赖安装脚本
+WHP-scm-huihuo-import 一键依赖安装脚本
 ====================================
 
-自动安装 WHP-whirlpool-download 技能所需的全部第三方 Python 包，
+自动安装 WHP-scm-huihuo-import 技能所需的全部第三方 Python 包，
 并初始化 Playwright 的 Edge 浏览器驱动。
 
 用法（在技能目录下执行）：
@@ -86,7 +86,7 @@ def main():
         print("\n  [跳过] 已指定 --no-browser，未初始化 Edge 驱动。")
 
     print("\n" + "=" * 60)
-    print("  [完成] WHP-whirlpool-download 依赖安装完毕")
+    print("  [完成] WHP-scm-huihuo-import 依赖安装完毕")
     print("=" * 60)
 
 

@@ -35,7 +35,7 @@ Whirlpool China 统一报表下载工具 V2.2
   --help, -h                  显示帮助信息
 
 首次运行:
-  先运行 py scripts/secure_config.py 设置加密密码
+  先运行 py scripts/download_secure_config.py 设置加密密码
   再运行 node run.js 执行下载
     `);
     return;
@@ -45,8 +45,8 @@ Whirlpool China 统一报表下载工具 V2.2
   const moduleIdx = args.indexOf("--module");
   const moduleArg = moduleIdx !== -1 && moduleIdx + 1 < args.length ? args[moduleIdx + 1] : null;
 
-  // Parse --headless (无头模式，默认关闭；用户要求报表下载默认无头时可加此参数)
-  const headless = args.includes("--headless");
+  // Parse --visible (可见模式，默认关闭；浏览器默认无头，调试/手动输验证码时加 --visible)
+  const visible = args.includes("--visible");
 
   // Build Python command
   let pythonArgs = "";
@@ -76,7 +76,7 @@ Whirlpool China 统一报表下载工具 V2.2
       cwd: SCRIPT_DIR,
       stdio: "inherit",
       timeout: 1200000, // 20 min timeout for full workflow
-      env: { ...process.env, PYTHONIOENCODING: "utf-8", PYTHONUNBUFFERED: "1", WP_HEADLESS: headless ? "1" : "0" },
+      env: { ...process.env, PYTHONIOENCODING: "utf-8", PYTHONUNBUFFERED: "1", WP_HEADLESS: visible ? "0" : "1" },
     });
     console.log("\n[OK] 报表下载执行完毕");
     process.exit(0);

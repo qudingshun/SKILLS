@@ -5,7 +5,7 @@ const net = require('net');
 const { simpleParser } = require('mailparser');
 const iconv = require('iconv-lite');
 
-const CFG = {user:'dingshun_qu@whirlpool-china.com',pass:'#***REMOVED***',host:'imap.qiye.163.com',port:143};
+const CFG = {user:'dingshun_qu@whirlpool-china.com',pass:process.env.MAIL_PASS||'',host:'imap.qiye.163.com',port:143};
 
 const EMAILS = [
   [9821, 'INBOX'],      // 澳洲Kogan
