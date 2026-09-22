@@ -41,7 +41,7 @@ node skills/WHP-whirlpool-email-reports/scripts/download-reports.cjs
 
 ### 链式任务执行流程（每日 09:00）
 1. `node skills/WHP-whirlpool-email-reports/scripts/download-reports.cjs` — 下载三份邮件报表
-2. `python E:\whirlpool-china\inventory_daily_report.py` — 更新产销存日报
+2. `py E:\whirlpool-china\inventory_daily_report.py` — 更新产销存日报
 
 ## 技术要点
 - 网易企业邮 IMAP **不支持**中文 SEARCH FROM/SUBJECT

@@ -40,9 +40,9 @@ description: >
 
 ## 执行方式
 ```bash
-python openclaw_skill.py
+py openclaw_skill.py
 # 或带参数显示 Excel 窗口
-python openclaw_skill.py --visible
+py openclaw_skill.py --visible
 ```
 
 ## 异常处理

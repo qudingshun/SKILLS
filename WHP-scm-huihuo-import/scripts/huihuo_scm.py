@@ -27,7 +27,7 @@ from huihuo_secure_config import load_scm_credentials
 # 日志初始化：控制台 + 文件双写，自动轮转
 # ═══════════════════════════════════════════════════════════
 _LOG_DIR = Path(__file__).parent
-_LOG_FILE = _LOG_DIR / "scm_huihuo.log"
+_LOG_FILE = _LOG_DIR.parent / "logs" / "scm_huihuo.log"
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)-8s] %(message)s",
@@ -105,6 +105,38 @@ def _add_item_summary(mat, qty, remark, import_ok, release_ok, release_error="")
         "release": "OK" if release_ok else ("SKIP" if import_ok else "-"),
         "release_error": release_error,
     })
+
+
+def _get_default_date():
+    """获取默认回货日期（当月最后一天）"""
+    today = _dt.date.today()
+    if today.month == 12:
+        last_day = _dt.date(today.year, 12, 31)
+    else:
+        last_day = _dt.date(today.year, today.month + 1, 1) - _dt.timedelta(days=1)
+    return last_day.strftime("%Y-%m-%d")
+
+
+def _log_success(mat, qty, remark, date_str):
+    """回货成功日志 — 增量写入 CSV 文件"""
+    log_path = os.path.join(os.path.dirname(__file__), "..", "logs", "huihuo_success_log.jsonl")
+    ts = _dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    date_val = date_str or _get_default_date()
+    remark_val = (remark or "").replace(",", "，")  # CSV转义中文逗号
+    new_row = f"{ts},{mat},{qty},{date_val},{remark_val}\n"
+    try:
+        if not os.path.exists(log_path):
+            # 新文件：写入表头 + 第一条记录
+            header = "处理时间,料号,数量,回货日期,备注\n"
+            with open(log_path, "w", encoding="utf-8") as f:
+                f.write(header)
+                f.write(new_row)
+        else:
+            # 已有文件：追加一行
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(new_row)
+    except Exception as e:
+        _logger.warning(f"写入成功日志失败: {e}")
 
 def _print_summary():
     now = _dt.datetime.now()
@@ -1164,6 +1196,7 @@ async def run_main(items, headless=True):
             release_result = await release_huihuo(page, mat_code)
             if release_result is True:
                 _add_item_summary(mat_code, item[1], item[3], True, True, "")
+                _log_success(mat_code, item[1], item[3], item[2] if len(item) >= 3 else "")
                 success_count += 1
                 print(f" [OK] {mat_code} 发放成功 ({success_count}成功/{fail_count}失败)")
             else:

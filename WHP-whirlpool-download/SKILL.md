@@ -24,7 +24,7 @@ description: >
 
 ## 前置条件
 
-- Python 3.11+（系统使用 `py` 命令，不是 `python`）
+- Python 3.11+（命令统一用 `py` 启动器，当前环境 `py` 与 `python` 均可用）
 - Python 依赖:
   ```bash
   pip install playwright pandas openpyxl ddddocr cryptography lxml
@@ -42,7 +42,7 @@ description: >
 
 > **PowerShell 不支持 `&&` 和 `||`！**
 > 命令体中**绝对禁止**写 `cd ... && node ...` 格式，必须通过 exec 的 `workdir` 参数传递工作目录。
-> **禁止在 command 中使用 `python`**，必须用 `py`（系统只有 `py.exe`）。
+> **命令中统一用 `py` 调用 Python 脚本**（当前环境 `py` 与 `python` 均可用，统一用启动器 `py`），禁止直接写 `python`。
 
 ### ✅ 统一执行规则（跨模型）
 ```json

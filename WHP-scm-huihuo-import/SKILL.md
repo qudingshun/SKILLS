@@ -19,20 +19,21 @@ description: >
 
 ## 前置条件
 
-- Python 3.11+ (`python --version`)
-- Python 依赖:
+- Python 3.11+（共享环境 `E:\SKILLS\.venv`，依赖完整，`run.js` 写死该解释器路径）
+- 依赖缺失时补齐（二选一）:
   ```bash
-  pip install playwright ddddocr cryptography
-  playwright install msedge
+  py scripts/install_deps.py
+  # 或
+  py -m pip install -r requirements.txt
   ```
-- Edge 浏览器已安装
-- 依赖验证: `python -c "from playwright.sync_api import sync_playwright; from cryptography.hazmat.primitives.ciphers import Cipher; print('ok')"`
+- Microsoft Edge 已安装
+- 依赖验证（共享 venv）: `E:\SKILLS\.venv\Scripts\python.exe -c "import playwright, ddddocr, cryptography, pandas, openpyxl, lxml, urllib3; print('ok')"`
 
 ## 触发指令
 
 ### ❗ 铁律（跨模型，绝不可违反）
 
-> **POWERHELL 不支持 `&&` 和 `||`！**
+> **PowerShell 不支持 `&&` 和 `||`！**
 > 命令体中**绝对禁止**写 `cd ... && node ...` 格式，这会直接报语法错误，脚本不会运行。
 > 必须通过 exec 的 `workdir` 参数传递工作目录。
 
@@ -88,13 +89,20 @@ node scripts/run.js --data "PUA313 9000, 3012111350140 2000, PUA223 131"
 1. 收到用户指令后，**当前轮必须立即输出 `exec` 工具调用**，不允许纯文字占位
 2. workdir 固定：`E:\SKILLS\WHP-scm-huihuo-import`
 3. **命令体中禁止写 `cd ... && ...` 格式**，必须通过 `workdir` 参数传递工作目录
-4. **禁止在 command 中使用 `python`**，必须用 `py`（系统只有 `py.exe`）
+4. **统一用 `py` 调用 Python 脚本**：命令一律 `py scripts/xxx.py`。当前环境 `py` 与 `python` 均可用（3.11.9），统一用启动器 `py` 避免 PATH 依赖，禁止直接写 `python`
 5. 用户输入的中文逗号 `，` → 自动替换为英文逗号 `,`
 6. 多行输入先转换为逗号分隔后再传给 `--data`
 7. 启动后必须用 `process(poll)` 等待完成并执行 `process(log)` 获取完整日志再汇报
 8. 默认即无头模式（无需任何参数），浏览器窗口不可见后台静默运行；仅当用户明确要求「显示浏览器窗口」或「调试」时才追加 `--visible` 参数
 
 ## 执行流程（直通批量导入模式）
+
+### 0. 前置判断（回货待办整合）
+- 运行 `py scripts/huihuo_todo_checker.py --data "料号 数量 备注"` 进行前置判断
+- 脚本自动检查：报表文件是否超过1小时（超过则先下载SCM报表）→ 查询采购订单剩余 → 判断是否满足回货数量
+- **满足**：调用 `run.js` 执行回货
+- **不满足**：按实际可用数量执行回货，未完成部分自动写入待办文件 `logs/todo.md`
+- 待办文件路径：`logs/todo.md`（由 `huihuo_todo_checker.py` 维护）
 
 ### 1. 输入格式检查
 - 料号格式检查（字母+数字，3-25位）
@@ -152,7 +160,7 @@ node scripts/run.js --data "PUA313 9000, 3012111350140 2000, PUA223 131"
 - 账号: 配置于 `scripts/huihuo_runtime_config.json` → `scm.username`
 - 密码: AES-256 加密存储于 `scripts/huihuo_runtime_config/passwords/scm_password.dat`
 - 验证码: 自动 OCR 识别
-- 密码管理: 运行 `python scripts/huihuo_secure_config.py` 可交互式设置各服务密码
+- 密码管理: 运行 `py scripts/huihuo_secure_config.py` 可交互式设置各服务密码
 
 ## 浏览器
 
@@ -172,6 +180,9 @@ node scripts/run.js --data "PUA313 9000, 3012111350140 2000, PUA223 131"
 | `scripts/install_deps.py` | 一键安装依赖（`py scripts/install_deps.py`） |
 | `scripts/huihuo_runtime_config.json` | 运行时配置（用户名等） |
 | `scripts/huihuo_runtime_config/passwords/scm_password.dat` | AES-256 加密的 SCM 密码 |
+| `logs/scm_huihuo.log` | 回货操作日志（自动轮转，2MB×5） |
+| `logs/huihuo_success_log.jsonl` | 回货成功日志（增量写入） |
+| `logs/todo.md` | 待办事项汇总表 |
 
 > 运行环境：`E:\SKILLS\.venv`（共享虚拟环境，依赖完整）。
 

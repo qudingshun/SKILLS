@@ -70,7 +70,7 @@ pip install pywin32
 
 ```powershell
 cd "E:\getBOM\Inventory Daily Report"
-python inventory_daily.py
+py inventory_daily.py
 ```
 
 **预期输出（本次实测）：**
@@ -195,7 +195,7 @@ ratio         = summary_sheet.Range("F23").Value             # 完成占比
 | # | 检查项 | 预期结果 |
 |---|--------|----------|
 | 1️⃣ | `pip install pywin32` 是否成功？ | ✅ pip list 可见 `pywin32-xxx` |
-| 2️⃣ | `python -c "import win32com.client; print('OK')"` | ✅ 输出 OK |
+| 2️⃣ | `py -c "import win32com.client; print('OK')"` | ✅ 输出 OK |
 | 3️⃣ | Excel COM 能否正常创建？ | ✅ 不报错 |
 | 4️⃣ | VBA 宏"产量出货更新"可被执行？ | ✅ 无红色错误 |
 | 5️⃣ | "汇总" Sheet 第22~24行读取为数值？ | ✅ 计划/下线/库存均为非 0 |
@@ -208,7 +208,7 @@ ratio         = summary_sheet.Range("F23").Value             # 完成占比
 
 ```powershell
 cd "E:\getBOM\Inventory Daily Report"
-python inventory_daily.py
+py inventory_daily.py
 ```
 
 ### 方式 B：OpenClaw 技能调用

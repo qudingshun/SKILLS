@@ -208,7 +208,7 @@ def main():
             if strip15(r[col_mat]).lower() != mat_l:
                 continue
             status = str(r[col_status]).strip() if r[col_status] else ""
-            if status == "打开":
+            if status == "下达":
                 v = r[col_q] if r[col_q] is not None else 0
                 pr_total += v
         result["请购单(不分供应商, 行状态=打开)"] = pr_total
