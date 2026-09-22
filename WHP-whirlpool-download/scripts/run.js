@@ -79,6 +79,7 @@ Whirlpool China 统一报表下载工具 V2.2
       env: { ...process.env, PYTHONIOENCODING: "utf-8", PYTHONUNBUFFERED: "1", WP_HEADLESS: visible ? "0" : "1" },
     });
     console.log("\n[OK] 报表下载执行完毕");
+    console.log("[LOG] 执行结果已写入 scripts/logs/report_downloader.log");
     process.exit(0);
   } catch (err) {
     if (err.signal === "SIGTERM") {

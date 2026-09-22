@@ -1,0 +1,3 @@
+#!/bin/sh
+# Pre-commit secret scan. Bypass (false positives only): git commit --no-verify
+exec node "$(dirname "$0")/scan-staged.mjs"

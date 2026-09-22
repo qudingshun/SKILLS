@@ -87,7 +87,7 @@ py scripts/download_secure_config.py
 3. 命令体中禁止写 `cd ... && ...` 格式
 4. 禁止在 command 中使用 `python`，必须用 `py`
 5. 默认超时 1200s（20分钟），因 SCM+OA+帆软全流程较慢
-6. 启动后必须用 `process(poll)` 等待完成并执行 `process(log)` 获取完整日志再汇报
+6. 启动后必须用 `process(poll)` 等待完成后，读取 `scripts/logs/report_downloader.log` 获取执行结果再汇报（单文件，每次执行覆盖）
 
 ## 执行流程
 
@@ -169,7 +169,7 @@ py scripts/download_secure_config.py
 - Cookie 过期时自动重新登录
 - 验证码 OCR 3次失败后提示手动输入
 - 所有异常记录到日志文件
-- 日志位置：`scripts/logs/report_downloader_*.log`
+- 日志位置：`scripts/logs/report_downloader.log`（单文件，每次执行覆盖，仅保留最近一次）
 
 ## 开发备注
 

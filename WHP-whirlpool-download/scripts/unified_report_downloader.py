@@ -2037,11 +2037,15 @@ class ReportDownloader:
         self.oa = OASystem(self.config_manager, self.secure_manager)
         self.fanruan = FanruanSystem(self.config_manager, self.secure_manager)
 
-        # 日志
+        # 日志（单文件 report_downloader.log，每次运行覆盖，仅保留最近一次）
         self.log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
         os.makedirs(self.log_dir, exist_ok=True)
-        session_id = datetime.now().strftime('%Y%m%d%H%M%S')
-        self.log_file = os.path.join(self.log_dir, f"report_downloader_{session_id}.log")
+        self.log_file = os.path.join(self.log_dir, "report_downloader.log")
+        try:
+            with open(self.log_file, "w", encoding="utf-8"):
+                pass  # 清空旧日志，本次运行从头记录
+        except Exception:
+            pass
 
     def _log(self, message):
         """追加日志"""
