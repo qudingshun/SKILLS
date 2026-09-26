@@ -30,7 +30,6 @@ E:\getBOM\Inventory Daily Report\
 ├── inventory_daily.md          ← 本文件
 ├── inventory_daily_report.py   ← 旧版脚本（含邮件下载，保留备份）
 ├── openclaw_skill.py           ← OpenClaw 技能入口
-├── openclaw.json               ← OpenClaw 技能配置
 ├── README.md / SKILL.md        ← 技能与项目说明
 └── DownMail/                   ← IMAP 邮件下载模块（旧版使用）
 ```

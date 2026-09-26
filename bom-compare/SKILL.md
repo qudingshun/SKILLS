@@ -36,7 +36,6 @@ description: >
 |------|------|
 | `scripts/run_bom_compare.py` | BOM 核对核心脚本（win32com 控制 Excel） |
 | `openclaw_skill.py` | OpenClaw 技能入口 |
-| `openclaw.json` | 技能注册配置 |
 
 ## 执行方式
 ```bash

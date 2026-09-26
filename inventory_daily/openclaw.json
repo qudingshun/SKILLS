@@ -1,8 +1,0 @@
-{
-  "name": "inventory-daily",
-  "version": "1.0.2",
-  "description": "成品库存日报生成工具",
-  "entry": "openclaw_skill.py",
-  "trigger_keywords": ["库存日报", "成品库存", "日报生成", "inventory daily"],
-  "dependencies": ["pywin32"]
-}
