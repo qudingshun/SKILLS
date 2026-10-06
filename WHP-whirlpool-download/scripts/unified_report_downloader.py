@@ -1146,9 +1146,9 @@ class SCMSystem:
             os.makedirs(d, exist_ok=True)
             download_dirs[tid] = d
 
-        # ═══ Phase 1: 齐射 — 提交全部查询（不等结果） ═══
+        # ═══ Phase 1: 齐射 - 提交全部查询（不等结果） ═══
         safe_print("\n" + "=" * 50)
-        safe_print("  Phase 1: 齐射 — 提交查询（skip_wait）")
+        safe_print("  Phase 1: 齐射 - 提交查询（skip_wait）")
         safe_print("=" * 50)
 
         for idx, (nav_index, method_name, dir_key) in enumerate(self.SUBMIT_ORDER, 1):
@@ -1168,9 +1168,9 @@ class SCMSystem:
                 proc_fn = getattr(self, method_name)
                 await proc_fn(page, download_dir, skip_wait=True)
 
-        # ═══ Phase 2: 收网 — 逐个收集结果 ═══
+        # ═══ Phase 2: 收网 - 逐个收集结果 ═══
         safe_print("\n" + "=" * 50)
-        safe_print("  Phase 2: 收网 — 收集数据")
+        safe_print("  Phase 2: 收网 - 收集数据")
         safe_print("=" * 50)
 
         # 等待页面稳定

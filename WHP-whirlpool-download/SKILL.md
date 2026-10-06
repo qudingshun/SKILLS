@@ -1,7 +1,7 @@
 ---
 name: WHP-whirlpool-download
 description: >
-  Whirlpool China 统一报表下载工具 — 自动登录 SCM/OA/帆软三大系统，
+  Whirlpool China 统一报表下载工具 - 自动登录 SCM/OA/帆软三大系统，
   按 SCM→OA→帆软顺序执行全部报表下载任务。
   
   SCM模块使用优化版逻辑（ExtJS API导航 + 齐射收网 + 网格直提），
@@ -128,9 +128,9 @@ py scripts/download_secure_config.py
 
 ### 密码加密存储
 位置：`E:\SKILLS\WHP-whirlpool-download\scripts\download_runtime_config\passwords\`
-- `scm_password.dat` — SCM 密码（AES-256 加密）
-- `oa_password.dat` — OA 密码（AES-256 加密）
-- `fanruan_password.dat` — 帆软密码（AES-256 加密）
+- `scm_password.dat` - SCM 密码（AES-256 加密）
+- `oa_password.dat` - OA 密码（AES-256 加密）
+- `fanruan_password.dat` - 帆软密码（AES-256 加密）
 
 ### 下载目录配置
 | 配置项 | 默认路径 | 说明 |
@@ -142,9 +142,9 @@ py scripts/download_secure_config.py
 
 ## 登录凭证
 
-- SCM: https://scm.whirlpool-china.com:7580/websrm/ — 账号 hsa697，密码加密存储
-- OA: https://oa.whirlpool-china.com — 账号 hsa697，密码加密存储
-- 帆软: https://rpt.whirlpool-china.com:7027/decision — 账号 HSA697，密码加密存储
+- SCM: https://scm.whirlpool-china.com:7580/websrm/ - 账号 hsa697，密码加密存储
+- OA: https://oa.whirlpool-china.com - 账号 hsa697，密码加密存储
+- 帆软: https://rpt.whirlpool-china.com:7027/decision - 账号 HSA697，密码加密存储
 
 ## 浏览器
 

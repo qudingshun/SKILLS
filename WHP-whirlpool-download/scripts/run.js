@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * OpenClaw 技能入口 — Whirlpool China 统一报表下载工具
+ * OpenClaw 技能入口 - Whirlpool China 统一报表下载工具
  *
  * 使用方式:
- *   node run.js                           // 全量下载：SCM → OA → 帆软
+ *   node run.js                           // 全量下载:SCM -> OA -> 帆软
  *   node run.js --module scm              // 只下载 SCM 报表
  *   node run.js --module oa               // 只下载 OA 计划
  *   node run.js --module fanruan          // 只下载帆软报表
@@ -25,13 +25,13 @@ function main() {
 Whirlpool China 统一报表下载工具 V2.2
 
 用法:
-  node run.js                           全量下载：SCM → OA → 帆软
-  node run.js --module scm              只下载 SCM 报表（5个任务）
+  node run.js                           全量下载:SCM -> OA -> 帆软
+  node run.js --module scm              只下载 SCM 报表(5个任务)
   node run.js --module oa               只下载 OA 生产计划
-  node run.js --module fanruan          只下载帆软报表（4个任务）
+  node run.js --module fanruan          只下载帆软报表(4个任务)
 
 选项:
-  --module <scm|oa|fanruan>   指定只运行某个模块（默认全量）
+  --module <scm|oa|fanruan>   指定只运行某个模块(默认全量)
   --help, -h                  显示帮助信息
 
 首次运行:
@@ -45,7 +45,7 @@ Whirlpool China 统一报表下载工具 V2.2
   const moduleIdx = args.indexOf("--module");
   const moduleArg = moduleIdx !== -1 && moduleIdx + 1 < args.length ? args[moduleIdx + 1] : null;
 
-  // Parse --visible (可见模式，默认关闭；浏览器默认无头，调试/手动输验证码时加 --visible)
+  // Parse --visible (可见模式,默认关闭;浏览器默认无头,调试/手动输验证码时加 --visible)
   const visible = args.includes("--visible");
 
   // Build Python command
@@ -53,7 +53,7 @@ Whirlpool China 统一报表下载工具 V2.2
   if (moduleArg) {
     const validModules = ["scm", "oa", "fanruan"];
     if (!validModules.includes(moduleArg)) {
-      console.error(`[ERR] 无效模块: ${moduleArg}，可选: scm, oa, fanruan`);
+      console.error(`[ERR] 无效模块: ${moduleArg},可选: scm, oa, fanruan`);
       process.exit(1);
     }
     pythonArgs = `--module ${moduleArg}`;
