@@ -44,8 +44,8 @@ def log(msg):
 
 
 def download_scm_reports():
-    """调用报表下载技能下载SCM报表"""
-    log("正在下载SCM报表...")
+    """调用报表下载技能下载 SCM 报表"""
+    log("正在下载 SCM 报表...")
     cmd = ["node", DOWNLOAD_SCRIPT, "--module", "scm"]
     try:
         result = subprocess.run(
@@ -53,20 +53,22 @@ def download_scm_reports():
             cwd=r"E:\SKILLS\WHP-whirlpool-download",
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=600,
         )
         if result.returncode == 0:
-            log("SCM报表下载成功")
+            log("全量报表下载成功")
             return True
         else:
-            log(f"SCM报表下载失败: exit={result.returncode}")
+            log(f"全量报表下载失败：exit={result.returncode}")
             log(f"stderr: {result.stderr[:500]}")
             return False
     except subprocess.TimeoutExpired:
-        log("SCM报表下载超时")
+        log("全量报表下载超时")
         return False
     except Exception as e:
-        log(f"SCM报表下载异常: {e}")
+        log(f"SCM 报表下载异常：{e}")
         return False
 
 
@@ -86,6 +88,8 @@ def query_material(material_code):
             [VENV_PYTHON, QUERY_SCRIPT, material_code],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=120,
         )
         if result.returncode == 0:
@@ -113,7 +117,7 @@ def extract_po_data(data):
         po_remaining += item.get("剩余可发布送货通知总量", 0)
 
     # 采购申请（请购单）
-    pr_total = data.get("请购单(不分供应商, 行状态=打开)", 0)
+    pr_total = data.get("请购单(不分供应商, 行状态=下达)", 0)
 
     # 回货计划中"可下发送货通知=是"的未分配量（已回货但未分配）
     huihuo_plan = data.get("回货计划(不分供应商)", {})
@@ -139,6 +143,8 @@ def run_huihuo_import(data_str, date_str, remarks, headless=False):
             cwd=str(SKILL_DIR),
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=600,
         )
         success = result.returncode == 0
@@ -251,13 +257,13 @@ def main():
     log(f"待处理回货: {len(items)} 条")
     log(f"日期: {args.date or '默认(当月最后一天)'} | 备注: {args.remarks or '无'}")
 
-    # 步骤1: 检查报表文件年龄，如超过1小时则下载
+    # 步骤 1: 检查报表文件年龄，如超过 1 小时则下载
     po_age_ok = check_file_age(PO_FILE, 60)
     huihuo_age_ok = check_file_age(HUIHUO_FILE, 60)
     pr_age_ok = check_file_age(PR_FILE, 60)
 
     if args.force_download or not (po_age_ok and huihuo_age_ok and pr_age_ok):
-        log("报表文件超过1小时或强制下载，正在更新SCM报表...")
+        log("报表文件超过 1 小时或强制下载，正在更新 SCM 报表...")
         if not download_scm_reports():
             log("报表下载失败，使用现有数据继续...")
     else:

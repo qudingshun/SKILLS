@@ -119,7 +119,7 @@ def _get_default_date():
 
 def _log_success(mat, qty, remark, date_str):
     """回货成功日志 — 增量写入 CSV 文件"""
-    log_path = os.path.join(os.path.dirname(__file__), "..", "logs", "huihuo_success_log.jsonl")
+    log_path = str(_LOG_DIR.parent / "logs" / "huihuo_success_log.log")
     ts = _dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     date_val = date_str or _get_default_date()
     remark_val = (remark or "").replace(",", "，")  # CSV转义中文逗号

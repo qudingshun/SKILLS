@@ -102,7 +102,7 @@ SCM 回货计划导入 & 发放 v2.2
 
   if (!fs.existsSync(VENV_PYTHON)) {
     console.error(`[ERR] 找不到共享虚拟环境: ${VENV_PYTHON}`);
-    console.error(`      请确认 E:\\SKILLS\\.venv 存在，或运行: py scripts/install_deps.py`);
+    console.error(`      请确认 E:\\SKILLS\\.venv 存在，或运行: E:/SKILLS/.venv/Scripts/python.exe scripts/install_deps.py`);
     process.exit(1);
   }
 

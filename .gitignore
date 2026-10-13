@@ -42,3 +42,9 @@ _archive/
 **/.cache/
 .download-state.json
 .export-state.json
+
+# Runtime artifacts (screenshots, logs, captcha)
+**/logs/
+**/images/
+*_captcha.png
+scm_captcha.png

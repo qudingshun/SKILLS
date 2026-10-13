@@ -38,7 +38,7 @@ function main() {
 
 首次运行:
   密码沿用 WHP-whirlpool-download 技能的 scm_password.dat，
-  如需重设可运行: py ../WHP-whirlpool-download/scripts/download_secure_config.py
+  如需重设可运行: E:/SKILLS/.venv/Scripts/python.exe ../WHP-whirlpool-download/scripts/download_secure_config.py
     `);
     return;
   }

@@ -14,7 +14,7 @@ description: >
 metadata:
   {
     "openclaw":
-      { "os": ["win32"], "requires": { "bins": ["node", "py"] } },
+      { "os": ["win32"], "requires": { "bins": ["node"] } },
   }
 ---
 
@@ -47,7 +47,7 @@ metadata:
 
 ## 查询逻辑
 
-运行脚本 `scripts/query.py 料号`，脚本输出 JSON 汇总，最终按以下格式整理成表格回复。
+运行 `E:/SKILLS/.venv/Scripts/python.exe scripts/query.py 料号`（或 `node scripts/run.js 料号`，二者等价），脚本输出 JSON 汇总，最终按以下格式整理成表格回复。
 
 ### 1. 库存（库存报表.xlsx，区分供应商，按货位分多行）
 
@@ -78,7 +78,15 @@ metadata:
 
 ### 6. 请购数量（请购单查询.xlsx，**不分供应商**）
 
-- `物料编码`=料号 且 `行状态`=**打开** → 累加 `请购单总数量`
+- `物料编码`=料号 且 `行状态`=**下达** → 累加 `请购单总数量`
+
+### 7. 物料名称获取
+
+- 运行 `E:/SKILLS/.venv/Scripts/python.exe scripts/get_mat_names.py 料号1 [料号2] ...`
+- 输出 JSON `{料号: 物料名称, ...}`
+- 数据源优先级：请购单查询.xlsx(col[14]) > 采购订单未结量(col[5]) > 送货单查询 > 库存报表
+- 未找到返回空字符串
+- **名称清洗规则**：`get_mat_names.py` 返回的名称含 `;` 分隔多段和 `\` 分隔子路径，取第一个 `;` 前段落作为主名称（如 `保护膜\LDPE\225mm*200m\856，956\` → `保护膜`）
 
 ## 输出格式（最终固化）
 

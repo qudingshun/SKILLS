@@ -24,16 +24,16 @@ description: >
 
 ## 前置条件
 
-- Python 3.11+（命令统一用 `py` 启动器，当前环境 `py` 与 `python` 均可用）
-- Python 依赖:
+- 统一使用仓库虚拟环境 `E:\SKILLS\.venv`（依赖已随 `E:\SKILLS\requirements.txt` 安装）
+- 依赖安装/补齐:
   ```bash
-  pip install playwright pandas openpyxl ddddocr cryptography lxml
-  playwright install msedge
+  E:/SKILLS/.venv/Scripts/python.exe -m pip install -r E:/SKILLS/requirements.txt
+  E:/SKILLS/.venv/Scripts/python.exe -m playwright install msedge
   ```
 - Edge 浏览器已安装（版本 80+）
 - 首次运行需先设置加密密码:
   ```bash
-  py scripts/download_secure_config.py
+  E:/SKILLS/.venv/Scripts/python.exe scripts/download_secure_config.py
   ```
 
 ## 触发指令
@@ -42,7 +42,7 @@ description: >
 
 > **PowerShell 不支持 `&&` 和 `||`！**
 > 命令体中**绝对禁止**写 `cd ... && node ...` 格式，必须通过 exec 的 `workdir` 参数传递工作目录。
-> **命令中统一用 `py` 调用 Python 脚本**（当前环境 `py` 与 `python` 均可用，统一用启动器 `py`），禁止直接写 `python`。
+> **命令中统一用仓库虚拟环境 `E:/SKILLS/.venv/Scripts/python.exe` 调用 Python 脚本**，禁止使用全局 `py` / `python`（版本可能不一致）。
 
 ### ✅ 统一执行规则（跨模型）
 ```json
@@ -78,14 +78,14 @@ node scripts/run.js --module fanruan
 
 ### "设置密码"
 ```bash
-py scripts/download_secure_config.py
+E:/SKILLS/.venv/Scripts/python.exe scripts/download_secure_config.py
 ```
 
 ### 跨模型执行规则（不可违反）
 1. 收到用户指令后，**当前轮必须立即输出 `exec` 工具调用**，不允许纯文字占位
 2. workdir 固定：`E:\SKILLS\WHP-whirlpool-download`
 3. 命令体中禁止写 `cd ... && ...` 格式
-4. 禁止在 command 中使用 `python`，必须用 `py`
+4. 禁止在 command 中使用全局 `py` / `python`，必须用 `E:/SKILLS/.venv/Scripts/python.exe`
 5. 默认超时 1200s（20分钟），因 SCM+OA+帆软全流程较慢
 6. 启动后必须用 `process(poll)` 等待完成后，读取 `scripts/logs/report_downloader.log` 获取执行结果再汇报（单文件，每次执行覆盖）
 
@@ -165,6 +165,10 @@ py scripts/download_secure_config.py
 
 ## 异常处理
 
+- **退出码语义（2026-10-10 修复）**：
+  - 全流程成功 → 退出码 `0`，日志写「全部完成，总用时：…」
+  - 任一模块/任务失败、或异常中止 → 退出码 `1`，控制台打印 `[FAIL] 执行失败，未完成：<原因>`，日志写「执行失败（未完成）：<原因>，总用时：…」
+  - ⚠️ **禁止只凭退出码判定成功**（早期版本整体失败也返回 0）：必须核对日志中 `SCM: 成功N, 失败M` / `OA: …` / `帆软: 成功N, 失败M` 三行摘要
 - 断点续传：单个任务失败不影响后续任务
 - Cookie 过期时自动重新登录
 - 验证码 OCR 3次失败后提示手动输入

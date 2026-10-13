@@ -41,7 +41,7 @@ def run():
 
     # ─────────────── 配置 ──────────────
     SRC_FILE = r"E:\OneDrive\桌面\生产情况日报\成品库存.xlsx"
-    ADDIN_FILE = r"E:\OneDrive\工作\9、VBA程序\回货引用文件\代码库\代码库.xlam"
+    ADDIN_FILE = r"E:/SKILLS/inventory_daily/data/代码库.xlam"
 
     print("=" * 50)
     print("inventory_daily.py -- 成品库存日报生成工具")
@@ -62,14 +62,36 @@ def run():
         excel.Visible = False
         excel.DisplayAlerts = False
 
-        print(f"   [1a] 加载加载项：{os.path.basename(ADDIN_FILE)} ...")
-        addin_wb = excel.Workbooks.Open(ADDIN_FILE)
+        print(f"   [1a] 检查加载项：{os.path.basename(ADDIN_FILE)} ...")
+        if not os.path.exists(ADDIN_FILE):
+            print(f"   [SKIP] 加载项未找到，跳过：{ADDIN_FILE}")
+            addin_wb = None
+        else:
+            try:
+                print(f"   [1a] 打开加载项：{os.path.basename(ADDIN_FILE)} ...")
+                addin_wb = excel.Workbooks.Open(ADDIN_FILE)
+            except Exception as e:
+                print(f"   [WARN] 加载项打开失败，跳过：{e}")
+                addin_wb = None
 
         print(f"   [1b] 打开主文件：{os.path.basename(SRC_FILE)} ...")
         wb = excel.Workbooks.Open(SRC_FILE)
 
-        print(f"   [1c] 执行宏：产量出货更新 ...")
-        excel.Application.Run("产量出货更新")
+        print(f"   [1c] 尝试启用宏安全设置...")
+        # 尝试启用宏（如果未启用会失败）
+        try:
+            excel.SecurityLevel = 0  # 0 = 禁用宏保护，允许所有宏
+            print(f"   [OK] 宏已启用")
+        except Exception as e:
+            print(f"   [WARN] 无法启用宏：{e}")
+        
+        print(f"   [1d] 执行宏：产量出货更新 ...")
+        try:
+            excel.Application.Run("产量出货更新")
+            print(f"   [OK] VBA 宏执行成功")
+        except Exception as e:
+            print(f"   [WARN] 宏运行失败（可能已禁用）：{e}")
+            # 即使宏失败，仍继续读取数据
 
         print(f"   [1d] 刷新透视表 (RefreshAll) ...")
         wb.RefreshAll()

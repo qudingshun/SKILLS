@@ -2,6 +2,15 @@
 # 所有 Python 技能共用 E:\SKILLS\.venv 虚拟环境
 # 更新方式: .venv\Scripts\python.exe -m pip install -r requirements.txt
 #
+# 铁律: 所有技能脚本一律用 E:\SKILLS\.venv\Scripts\python.exe 执行，
+#       禁止使用全局 py / python，避免依赖版本不一致。
+#
+
+# 图像 / 截图（camera-capture / screen-capture）
+opencv-python
+mss
+Pillow
+
 # Playwright / 浏览器自动化
 playwright>=1.62.0
 

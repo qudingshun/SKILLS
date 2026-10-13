@@ -18,9 +18,27 @@ description: >
 
 ## 触发指令
 
+### ❗ 铁律（跨模型，绝不可违反）
+
+> **PowerShell 不支持 `&&` 和 `||`！**
+> 命令体中**绝对禁止**写 `cd ... && node ...` 格式，必须通过 exec 的 `workdir` 参数传递工作目录。
+> **命令中统一用仓库虚拟环境 `E:/SKILLS/.venv/Scripts/python.exe` 调用 Python 脚本**，禁止使用全局 `py` / `python`（版本可能不一致）。
+
+### ✅ 统一执行规则（跨模型）
+```json
+{
+  "tool": "exec",
+  "params": {
+    "command": "node E:/SKILLS/WHP-whirlpool-email-reports/scripts/download-reports.cjs",
+    "workdir": "E:/SKILLS/WHP-whirlpool-email-reports",
+    "timeout": 120
+  }
+}
+```
+
 ### "下载邮件" / "邮件下载"
 ```bash
-node skills/WHP-whirlpool-email-reports/scripts/download-reports.cjs
+node E:/SKILLS/WHP-whirlpool-email-reports/scripts/download-reports.cjs
 ```
 - 移旧 → 下载三份最新报表 → 保存附件到对应目录
 
@@ -41,7 +59,7 @@ node skills/WHP-whirlpool-email-reports/scripts/download-reports.cjs
 
 ### 链式任务执行流程（每日 09:00）
 1. `node skills/WHP-whirlpool-email-reports/scripts/download-reports.cjs` — 下载三份邮件报表
-2. `py E:\whirlpool-china\inventory_daily_report.py` — 更新产销存日报
+2. `E:/SKILLS/.venv/Scripts/python.exe E:\whirlpool-china\inventory_daily_report.py` — 更新产销存日报
 
 ## 技术要点
 - 网易企业邮 IMAP **不支持**中文 SEARCH FROM/SUBJECT

@@ -193,7 +193,7 @@ def main():
     except Exception as e:
         result["回货计划(不分供应商)"] = {"error": str(e)}
 
-    # ---------- 6. 请购单查询 (行状态=打开, 不分供应商) ----------
+    # ---------- 6. 请购单查询 (行状态=下达, 不分供应商) ----------
     try:
         rows = _load(os.path.join(BASE, "请购单查询.xlsx"))
         hdr = rows[0]
@@ -211,9 +211,9 @@ def main():
             if status == "下达":
                 v = r[col_q] if r[col_q] is not None else 0
                 pr_total += v
-        result["请购单(不分供应商, 行状态=打开)"] = pr_total
+        result["请购单(不分供应商, 行状态=下达)"] = pr_total
     except Exception as e:
-        result["请购单(不分供应商, 行状态=打开)"] = {"error": str(e)}
+        result["请购单(不分供应商, 行状态=下达)"] = {"error": str(e)}
 
     print(json.dumps(result, ensure_ascii=False, indent=2))
 

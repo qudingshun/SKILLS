@@ -39,9 +39,9 @@ description: >
 
 ## 执行方式
 ```bash
-py openclaw_skill.py
+E:/SKILLS/.venv/Scripts/python.exe openclaw_skill.py
 # 或带参数显示 Excel 窗口
-py openclaw_skill.py --visible
+E:/SKILLS/.venv/Scripts/python.exe openclaw_skill.py --visible
 ```
 
 ## 异常处理

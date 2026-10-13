@@ -35,7 +35,7 @@ Whirlpool China 统一报表下载工具 V2.2
   --help, -h                  显示帮助信息
 
 首次运行:
-  先运行 py scripts/download_secure_config.py 设置加密密码
+  先运行 E:/SKILLS/.venv/Scripts/python.exe scripts/download_secure_config.py 设置加密密码
   再运行 node run.js 执行下载
     `);
     return;

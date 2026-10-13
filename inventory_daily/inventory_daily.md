@@ -40,7 +40,7 @@ E:\getBOM\Inventory Daily Report\
 
 | 模块 | 安装命令 | 用途 |
 |------|----------|------|
-| `pywin32` | `pip install pywin32` | Excel COM 自动化（必需，含 win32com） |
+| `pywin32` | `E:/SKILLS/.venv/Scripts/python.exe -m pip install pywin32` | Excel COM 自动化（必需，含 win32com） |
 
 > 🔒 **不会干扰你正在运行的 Excel**：脚本使用 `DispatchEx("Excel.Application")` 创建**独立**的 Excel 实例，绝不附加/复用你已打开的 Excel，也不会隐藏或关闭你的窗口和工作簿。
 
@@ -51,7 +51,7 @@ E:\getBOM\Inventory Daily Report\
 ### 1. 安装依赖
 
 ```powershell
-pip install pywin32
+E:/SKILLS/.venv/Scripts/python.exe -m pip install -r E:/SKILLS/requirements.txt
 ```
 
 ### 2. 准备 Excel 文件
@@ -69,7 +69,7 @@ pip install pywin32
 
 ```powershell
 cd "E:\getBOM\Inventory Daily Report"
-py inventory_daily.py
+E:/SKILLS/.venv/Scripts/python.exe inventory_daily.py
 ```
 
 **预期输出（本次实测）：**
@@ -193,8 +193,8 @@ ratio         = summary_sheet.Range("F23").Value             # 完成占比
 
 | # | 检查项 | 预期结果 |
 |---|--------|----------|
-| 1️⃣ | `pip install pywin32` 是否成功？ | ✅ pip list 可见 `pywin32-xxx` |
-| 2️⃣ | `py -c "import win32com.client; print('OK')"` | ✅ 输出 OK |
+| 1️⃣ | `E:/SKILLS/.venv/Scripts/python.exe -m pip install pywin32` 是否成功？ | ✅ pip list 可见 `pywin32-xxx` |
+| 2️⃣ | `E:/SKILLS/.venv/Scripts/python.exe -c "import win32com.client; print('OK')"` | ✅ 输出 OK |
 | 3️⃣ | Excel COM 能否正常创建？ | ✅ 不报错 |
 | 4️⃣ | VBA 宏"产量出货更新"可被执行？ | ✅ 无红色错误 |
 | 5️⃣ | "汇总" Sheet 第22~24行读取为数值？ | ✅ 计划/下线/库存均为非 0 |
@@ -207,7 +207,7 @@ ratio         = summary_sheet.Range("F23").Value             # 完成占比
 
 ```powershell
 cd "E:\getBOM\Inventory Daily Report"
-py inventory_daily.py
+E:/SKILLS/.venv/Scripts/python.exe inventory_daily.py
 ```
 
 ### 方式 B：OpenClaw 技能调用

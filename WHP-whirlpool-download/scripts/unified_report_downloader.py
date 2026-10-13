@@ -2066,10 +2066,13 @@ class ReportDownloader:
         # 检查依赖
         deps = ["playwright", "pandas", "openpyxl", "ddddocr", "cryptography"]
         if not _check_deps(deps):
-            return
+            self._log("执行失败：依赖缺失")
+            return False
 
         start_time = datetime.now()
         p, browser = None, None
+        overall_ok = True
+        fail_reasons = []
 
         try:
             # 创建浏览器
@@ -2084,6 +2087,9 @@ class ReportDownloader:
             scm_ok = sum(1 for v in scm_results.values() if v)
             scm_fail = sum(1 for v in scm_results.values() if not v)
             self._log(f"SCM: 成功{scm_ok}, 失败{scm_fail}")
+            if scm_fail:
+                overall_ok = False
+                fail_reasons.append(f"SCM 失败{scm_fail}项")
 
             # ── Phase 2: OA ──
             safe_print("\n" + "=" * 60)
@@ -2091,6 +2097,9 @@ class ReportDownloader:
             safe_print("=" * 60)
             oa_ok = await self.oa.run(page)
             self._log(f"OA: {'成功' if oa_ok else '失败'}")
+            if not oa_ok:
+                overall_ok = False
+                fail_reasons.append("OA 失败")
 
             # ── Phase 3: 帆软 ──
             safe_print("\n" + "=" * 60)
@@ -2100,8 +2109,13 @@ class ReportDownloader:
             fanruan_ok = sum(1 for v in fanruan_results.values() if v)
             fanruan_fail = sum(1 for v in fanruan_results.values() if not v)
             self._log(f"帆软: 成功{fanruan_ok}, 失败{fanruan_fail}")
+            if fanruan_fail:
+                overall_ok = False
+                fail_reasons.append(f"帆软 失败{fanruan_fail}项")
 
         except Exception as e:
+            overall_ok = False
+            fail_reasons.append(f"异常中止: {e}")
             safe_print(f"\n[错误] 执行失败：{e}")
             traceback.print_exc()
             self._log(f"异常: {e}")
@@ -2109,11 +2123,20 @@ class ReportDownloader:
         finally:
             elapsed = datetime.now() - start_time
             total_sec = int(elapsed.total_seconds())
-            self._log(f"全部完成，总用时：{total_sec // 60}分{total_sec % 60}秒")
+            duration = f"{total_sec // 60}分{total_sec % 60}秒"
 
-            safe_print("\n" + "=" * 60)
-            safe_print(f"  全部任务完成！总耗时：{total_sec // 60}分{total_sec % 60}秒")
-            safe_print("=" * 60)
+            if overall_ok:
+                self._log(f"全部完成，总用时：{duration}")
+                safe_print("\n" + "=" * 60)
+                safe_print(f"  全部任务完成！总耗时：{duration}")
+                safe_print("=" * 60)
+            else:
+                reason = "；".join(fail_reasons) or "未知原因"
+                self._log(f"执行失败（未完成）：{reason}，总用时：{duration}")
+                safe_print("\n" + "=" * 60)
+                safe_print(f"  [FAIL] 执行失败，未完成：{reason}")
+                safe_print(f"  总耗时：{duration}")
+                safe_print("=" * 60)
 
             if browser:
                 try:
@@ -2126,30 +2149,41 @@ class ReportDownloader:
                 except Exception:
                     pass
 
+        return overall_ok
+
     async def _run_module(self, module_name, run_func, label):
-        """运行单个模块的通用方法"""
+        """运行单个模块的通用方法；返回是否成功"""
         safe_print("\n" + "=" * 60)
         safe_print(f"  {label}")
         safe_print("=" * 60)
 
         start_time = datetime.now()
         p, browser = None, None
+        ok = True
 
         try:
             safe_print("\n[启动] 初始化浏览器...")
             p, browser, context, page = await create_browser()
-            await run_func(page, context)
+            ok = bool(await run_func(page, context))
         except Exception as e:
+            ok = False
             safe_print(f"\n[错误] 执行失败：{e}")
             traceback.print_exc()
             self._log(f"异常: {e}")
         finally:
             elapsed = datetime.now() - start_time
             total_sec = int(elapsed.total_seconds())
-            self._log(f"{module_name}完成，总用时：{total_sec // 60}分{total_sec % 60}秒")
-            safe_print("\n" + "=" * 60)
-            safe_print(f"  {module_name}任务完成！总耗时：{total_sec // 60}分{total_sec % 60}秒")
-            safe_print("=" * 60)
+            duration = f"{total_sec // 60}分{total_sec % 60}秒"
+            if ok:
+                self._log(f"{module_name}完成，总用时：{duration}")
+                safe_print("\n" + "=" * 60)
+                safe_print(f"  {module_name}任务完成！总耗时：{duration}")
+                safe_print("=" * 60)
+            else:
+                self._log(f"{module_name}执行失败（未完成），总用时：{duration}")
+                safe_print("\n" + "=" * 60)
+                safe_print(f"  [FAIL] {module_name}执行失败（未完成），总耗时：{duration}")
+                safe_print("=" * 60)
             if browser:
                 try:
                     await browser.close()
@@ -2160,6 +2194,8 @@ class ReportDownloader:
                     await p.stop()
                 except Exception:
                     pass
+
+        return ok
 
     async def run_scm_only(self):
         """只运行 SCM 模块"""
@@ -2168,14 +2204,16 @@ class ReportDownloader:
             scm_ok = sum(1 for v in scm_results.values() if v)
             scm_fail = sum(1 for v in scm_results.values() if not v)
             self._log(f"SCM: 成功{scm_ok}, 失败{scm_fail}")
-        await self._run_module("SCM", _scm, "SCM 系统任务（单独模式）")
+            return scm_fail == 0
+        return await self._run_module("SCM", _scm, "SCM 系统任务（单独模式）")
 
     async def run_oa_only(self):
         """只运行 OA 模块"""
         async def _oa(page, context):
             oa_ok = await self.oa.run(page)
             self._log(f"OA: {'成功' if oa_ok else '失败'}")
-        await self._run_module("OA", _oa, "OA 系统任务（单独模式）")
+            return bool(oa_ok)
+        return await self._run_module("OA", _oa, "OA 系统任务（单独模式）")
 
     async def run_fanruan_only(self):
         """只运行帆软模块"""
@@ -2184,7 +2222,8 @@ class ReportDownloader:
             fanruan_ok = sum(1 for v in fanruan_results.values() if v)
             fanruan_fail = sum(1 for v in fanruan_results.values() if not v)
             self._log(f"帆软: 成功{fanruan_ok}, 失败{fanruan_fail}")
-        await self._run_module("帆软", _fanruan, "帆软报表任务（单独模式）")
+            return fanruan_fail == 0
+        return await self._run_module("帆软", _fanruan, "帆软报表任务（单独模式）")
 
 
 # ═══════════════════════════════════════════════════════
@@ -2202,17 +2241,19 @@ def _parse_args():
 async def main(module=None):
     downloader = ReportDownloader()
     if module == "scm":
-        await downloader.run_scm_only()
+        return await downloader.run_scm_only()
     elif module == "oa":
-        await downloader.run_oa_only()
+        return await downloader.run_oa_only()
     elif module == "fanruan":
-        await downloader.run_fanruan_only()
+        return await downloader.run_fanruan_only()
     else:
-        await downloader.run_all()
+        return await downloader.run_all()
 
 
 if __name__ == "__main__":
     if not _check_deps(["playwright", "pandas", "openpyxl", "ddddocr", "cryptography", "lxml"]):
         sys.exit(1)
     args = _parse_args()
-    asyncio.run(main(module=args.module))
+    _ok = asyncio.run(main(module=args.module))
+    # 退出码必须体现真实结果：任一模态/任务失败即非 0，便于 cron 与调用方判定
+    sys.exit(0 if _ok else 1)
