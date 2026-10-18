@@ -112,6 +112,11 @@ def extract_po_data(data):
     pr_total = 0
     huihuo_yes_unassigned = 0  # 未分配已回货数量（可下发送货通知=是）
 
+    # query.py 返回的是数组（[{...}]），无数据时为空数组 []；
+    # 先归一化成 dict，否则下面的 .get() 会抛 AttributeError
+    if isinstance(data, list):
+        data = data[0] if data else {}
+
     # 采购订单剩余
     for item in data.get("采购订单剩余可发布量", []):
         po_remaining += item.get("剩余可发布送货通知总量", 0)

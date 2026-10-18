@@ -1050,8 +1050,8 @@ async def release_huihuo(page, first_material):
 # 创建浏览器实例
 # ============================================================
 
-async def create_browser(playwright, headless=True):
-    """创建Edge浏览器实例（默认无头模式，--visible 显示窗口）"""
+async def create_browser(playwright, headless=False):
+    """创建Edge浏览器实例（默认有头模式，--headless 无头静默）"""
     browser = await playwright.chromium.launch(
         channel="msedge", headless=headless,
         args=["--disable-blink-features=AutomationControlled",
@@ -1070,7 +1070,7 @@ async def create_browser(playwright, headless=True):
 # 主流程
 # ============================================================
 
-async def run_main(items, headless=True):
+async def run_main(items, headless=False):
     """
     直通批量导入模式：登录 → 批量导入 → 逐条发放
     - 导入：一次导航，逐行新增填数据，统一保存审核
@@ -1253,7 +1253,8 @@ async def main():
     import argparse
     parser = argparse.ArgumentParser(description="回货计划导入发放")
     parser.add_argument("--data", help="料号数量数据，格式: '料号1 数量1 备注1, 料号2 数量2'")
-    parser.add_argument("--visible", action="store_true", help="可见模式运行（默认无头）")
+    parser.add_argument("--headless", action="store_true", help="无头模式运行（默认有头，显示浏览器窗口）")
+    parser.add_argument("--visible", action="store_true", help="[兼容保留] 有头可见模式（默认即有头，此参数无副作用）")
 
     args = parser.parse_args()
 
@@ -1316,7 +1317,7 @@ async def main():
     if not args.data:
         input("\n确认无误后按 Enter 开始...")
 
-    success = await run_main(items, headless=not args.visible)
+    success = await run_main(items, headless=args.headless)
 
     if not success:
         print("\n[FAIL] 回货流程完成（有失败项）")

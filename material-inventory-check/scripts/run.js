@@ -21,14 +21,15 @@ function main() {
     return;
   }
 
-  const material = args.join(" ");
-  if (!material) {
+
+  const materials = args;
+  if (materials.length === 0) {
     console.error("[ERR] 请提供料号");
     process.exit(1);
   }
 
   try {
-    execSync(`"${VENV_PYTHON}" "${PYTHON_SCRIPT}" "${material}"`, {
+    execSync(`"${VENV_PYTHON}" "${PYTHON_SCRIPT}" ${materials.join(" ")}`, {
       cwd: SCRIPT_DIR,
       stdio: "inherit",
       timeout: 120000,

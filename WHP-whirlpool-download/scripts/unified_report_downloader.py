@@ -270,72 +270,107 @@ class SCMSystem:
             safe_print("  [登录] [FAIL] 未找到密码输入框")
             return False
 
-        # 验证码（OCR 3次，失败后手动输入）
+        # 验证码：整轮登录最多 3 次尝试（OCR 识别 → 提交 → 判断是否登录成功）
+        # 注意：旧实现只重试"OCR 是否返回字符串"，而 ddddocr 几乎总会返回一个字符串，
+        #       于是 if captcha: break 立刻跳出，实际只提交 1 次 → 识别错了就直接失败。
         try:
             await page.wait_for_selector("#kaptcha", timeout=5000)
         except Exception:
             safe_print("  [登录] [FAIL] 未找到验证码输入框")
             return False
 
-        captcha = None
-        for attempt in range(1, 4):
-            safe_print(f"  [登录] OCR验证码 (第{attempt}次)...")
-            if attempt > 1:
-                try:
-                    await page.locator("#changeCode").click(timeout=3000)
-                    await asyncio.sleep(1)
-                except Exception:
-                    pass
-            captcha = await self._recognize_captcha(page)
-            if captcha:
-                safe_print(f"  [登录] [OK] OCR识别: {captcha}")
-                break
-            safe_print(f"  [登录] 第{attempt}次失败" + ("" if attempt < 3 else "，3次均失败"))
-
-        if not captcha:
-            safe_print("\n  OCR 3次失败，请手动输入验证码")
-            try:
-                await page.screenshot(path="scm_captcha.png")
-                safe_print("  已保存验证码截图到 scm_captcha.png")
-            except Exception:
-                pass
-            captcha = input("  请输入验证码: ").strip()
-
-        if captcha:
+        async def _submit_login(code: str) -> bool:
+            """填入验证码 → 点登录 → 等待结果，返回是否登录成功"""
             el = await page.query_selector("#kaptcha")
             if el:
                 await el.fill("")
-                await el.fill(captcha)
+                await el.fill(code)
                 safe_print("  [登录] [OK] 已填验证码")
-
-        # 点击登录
-        clicked = False
-        for sel in ["input[name='CPCLogin']", ".sub_btn", "input[type='submit']"]:
+            clicked = False
+            for sel in ["input[name='CPCLogin']", ".sub_btn", "input[type='submit']"]:
+                try:
+                    btn = await page.query_selector(sel)
+                    if btn:
+                        await btn.click()
+                        clicked = True
+                        safe_print(f"  [登录] [OK] 点击登录 ({sel})")
+                        break
+                except Exception:
+                    continue
+            if not clicked:
+                safe_print("  [登录] 按回车提交")
+                await page.keyboard.press("Enter")
+            await asyncio.sleep(5)
             try:
-                btn = await page.query_selector(sel)
-                if btn:
-                    await btn.click()
-                    clicked = True
-                    safe_print(f"  [登录] [OK] 点击登录 ({sel})")
-                    break
+                await page.wait_for_load_state("networkidle", timeout=30000)
             except Exception:
+                pass
+            await asyncio.sleep(3)
+            return await self.is_logged_in(page)
+
+        async def _recover_for_retry():
+            """失败后恢复现场：关掉"验证码错误"弹窗 → 刷新验证码 → 必要时重填账号密码。
+            不整页刷新（会清空已填的账号密码），仅在验证码输入框消失时才重填。"""
+            for _ in range(2):
+                try:
+                    await page.keyboard.press("Escape")
+                except Exception:
+                    pass
+                await asyncio.sleep(0.3)
+            for sel in ('.x-window:visible .x-btn-inner:has-text("确定")',
+                        '.x-layer:visible .x-btn-inner:has-text("确定")',
+                        'button:visible:has-text("确定")',
+                        'a:visible:has-text("确定")'):
+                try:
+                    b = page.locator(sel).first
+                    if await b.is_visible(timeout=800):
+                        await b.click(force=True, timeout=2000)
+                        safe_print("  [登录] 已关闭验证码错误弹窗")
+                        await asyncio.sleep(0.5)
+                        break
+                except Exception:
+                    continue
+            # 点击验证码图片刷新（#changeCode）
+            try:
+                await page.locator("#changeCode").click(timeout=3000)
+                await asyncio.sleep(1)
+            except Exception:
+                pass
+            if not await page.query_selector("#kaptcha"):
+                safe_print("  [登录] 登录页已重置，重新填写账号密码")
+                try:
+                    if not await page.query_selector("#username"):
+                        await page.goto(SCM_URL, timeout=60000)
+                        await asyncio.sleep(3)
+                    u = await page.query_selector("#username")
+                    if u:
+                        await u.fill("")
+                        await u.fill(username)
+                    p = await page.query_selector("#password")
+                    if p:
+                        await p.fill("")
+                        await p.fill(password)
+                    safe_print("  [登录] [OK] 已重填账号密码")
+                except Exception:
+                    pass
+
+        for attempt in range(1, 4):
+            safe_print(f"  [登录] 第 {attempt}/3 次尝试（OCR 验证码 + 提交）...")
+            captcha = await self._recognize_captcha(page)
+            if not captcha:
+                safe_print(f"  [登录] 第 {attempt} 次 OCR 未识别出内容")
+                if attempt < 3:
+                    await _recover_for_retry()
                 continue
-        if not clicked:
-            safe_print("  [登录] 按回车提交")
-            await page.keyboard.press("Enter")
+            safe_print(f"  [登录] OCR 识别: {captcha}")
+            if await _submit_login(captcha):
+                safe_print("\n  [OK] SCM登录成功！")
+                return True
+            safe_print(f"  [登录] 第 {attempt} 次登录失败（验证码可能错误）")
+            if attempt < 3:
+                await _recover_for_retry()
 
-        # 等待登录完成
-        await asyncio.sleep(5)
-        try:
-            await page.wait_for_load_state("networkidle", timeout=30000)
-        except Exception:
-            pass
-        await asyncio.sleep(3)
-
-        if await self.is_logged_in(page):
-            safe_print("\n  [OK] SCM登录成功！")
-            return True
-        # 登录失败诊断
+        # 3 次整轮尝试均失败：保存现场
         try:
             safe_print(f"  [诊断] URL: {page.url}")
             safe_print(f"  [诊断] Title: {await page.title()}")
@@ -343,6 +378,22 @@ class SCMSystem:
             safe_print("  [诊断] 已保存截图至 debug_scm_login.png")
         except Exception:
             pass
+
+        # 仅在交互终端下允许手动输入验证码（后台/管道运行没有 stdin，input() 会挂住）
+        if sys.stdin is not None and sys.stdin.isatty():
+            safe_print("\n  OCR 3 次均失败，请手动输入验证码")
+            try:
+                manual = input("  请输入验证码: ").strip()
+            except Exception:
+                manual = ""
+            if manual:
+                await _recover_for_retry()
+                if await _submit_login(manual):
+                    safe_print("\n  [OK] SCM登录成功！")
+                    return True
+        else:
+            safe_print("\n  [FAIL] 验证码 OCR 连续 3 次未通过（非交互环境，跳过手动输入）")
+
         safe_print("\n  [FAIL] SCM登录可能失败")
         return False
 
@@ -671,31 +722,47 @@ class SCMSystem:
             }})()
         """)
 
-    async def _tab_org_search(self, page, field_name: str, org_code: str) -> bool:
-        """组织搜索选择器：ExtJS触发搜索 → Playwright操作弹窗 → 选择 → 确定"""
-        # ExtJS 触发搜索按钮
-        clicked = await page.evaluate(f"""
-            (() => {{
-                try {{
-                    var tp = Ext.ComponentQuery.query('tabpanel')[0];
-                    var tab = tp ? tp.getActiveTab() : null;
-                    if (!tab) return false;
-                    var field = tab.down('[name="{field_name}"]');
-                    if (!field) return false;
-                    var el = field.getEl();
-                    if (!el) return false;
-                    var triggerEl = el.down('.x-form-search-trigger');
-                    if (triggerEl) {{
-                        triggerEl.dom.click();
-                        return true;
-                    }}
-                    return false;
-                }} catch(e) {{ return false; }}
-            }})()
-        """)
+    async def _tab_org_search(self, page, field_name, org_code: str) -> bool:
+        """组织搜索选择器：ExtJS触发搜索 → Playwright操作弹窗 → 选择 → 确定
+
+        field_name 支持单个字段名或候选字段名列表（按顺序探测第一个存在且带搜索触发器的字段）。
+        各页签组织字段名不一致：送货通知查询/请购单查询 = sap_org_code，
+        送货单查询/PO未结量汇总查询 = organization_code。
+        只有全部候选都不中时才报一次 FAIL，避免对不存在的字段名打印误导性的
+        "触发 xxx 搜索失败"（旧实现逐名报错，实际只是回退命中了下一个候选）。
+        """
+        candidates = [field_name] if isinstance(field_name, str) else list(field_name)
+        clicked = False
+        used = ""
+        # ExtJS 触发搜索按钮（逐个候选探测）
+        for name in candidates:
+            clicked = await page.evaluate(f"""
+                (() => {{
+                    try {{
+                        var tp = Ext.ComponentQuery.query('tabpanel')[0];
+                        var tab = tp ? tp.getActiveTab() : null;
+                        if (!tab) return false;
+                        var field = tab.down('[name="{name}"]');
+                        if (!field) return false;
+                        var el = field.getEl();
+                        if (!el) return false;
+                        var triggerEl = el.down('.x-form-search-trigger');
+                        if (triggerEl) {{
+                            triggerEl.dom.click();
+                            return true;
+                        }}
+                        return false;
+                    }} catch(e) {{ return false; }}
+                }})()
+            """)
+            if clicked:
+                used = name
+                break
         if not clicked:
-            safe_print(f"  [操作] [FAIL] 触发{field_name}搜索失败")
+            safe_print(f"  [操作] [FAIL] 未找到组织字段（候选: {', '.join(candidates)}）")
             return False
+        if used != candidates[0]:
+            safe_print(f"  [操作] [OK] 组织字段回退命中: {used}")
         await asyncio.sleep(1.5)
 
         # Playwright 操作弹窗
@@ -894,7 +961,8 @@ class SCMSystem:
         """送货通知查询"""
         safe_print("\n  [任务1/5] 送货通知查询")
         org_code = self.config_manager.get_sc_config("org_code", "M03")
-        await self._tab_org_search(page, "sap_org_code", org_code)
+        if not await self._tab_org_search(page, ["sap_org_code", "organization_code", "org_code"], org_code):
+            safe_print("  [操作] [WARN] 送货通知查询未设置组织，请检查组织字段名")
         await self._tab_set_value(page, "maxsearchrltcmt", "99999")
         await self._tab_select_combo(page, "is_close", "否")
         if await self._tab_click_btn(page, "立即查询"):
@@ -921,7 +989,8 @@ class SCMSystem:
         await self._tab_set_value(page, "created_date_end", end_date)
         safe_print(f"  [日期] [OK] 送货单产生日期 {start_date} ~ {end_date}")
         await self._tab_select_combo(page, "received", "未接收")
-        await self._tab_org_search(page, "organization_code", org_code)
+        if not await self._tab_org_search(page, ["organization_code", "sap_org_code", "org_code"], org_code):
+            safe_print("  [操作] [WARN] 送货单查询未设置组织，请检查组织字段名")
         await asyncio.sleep(0.3)
         await self._tab_set_value(page, "maxsearchrltcmt", "99999")
         if await self._tab_click_btn(page, "立即查询"):
@@ -942,7 +1011,8 @@ class SCMSystem:
         """PO未结量汇总查询"""
         safe_print("\n  [任务3/5] PO未结量汇总查询")
         org_code = self.config_manager.get_sc_config("org_code", "M03")
-        await self._tab_org_search(page, "organization_code", org_code)
+        if not await self._tab_org_search(page, ["organization_code", "sap_org_code", "org_code"], org_code):
+            safe_print("  [操作] [WARN] PO未结量未设置组织，请检查组织字段名")
         await asyncio.sleep(0.3)
         await self._tab_set_value(page, "maxsearchrltcmt", "99999")
         if await self._tab_click_btn(page, "立即查询"):
@@ -1089,14 +1159,9 @@ class SCMSystem:
         # 最大99999
         await self._tab_set_value(page, "maxsearchrltcmt", "99999")
 
-        # 组织搜索
-        found = False
-        for name in ["organization_code", "sap_org_code", "org_code"]:
-            if await self._tab_org_search(page, name, org_code):
-                found = True
-                break
-        if not found:
-            safe_print("  [操作] [WARN] 未找到组织字段")
+        # 组织搜索（请购单查询页签真实字段名是 sap_org_code，放首位，避免一次无效探测+误报 FAIL）
+        if not await self._tab_org_search(page, ["sap_org_code", "organization_code", "org_code"], org_code):
+            safe_print("  [操作] [WARN] 请购单查询未设置组织，请检查组织字段名")
 
         # 立即查询
         if await self._tab_click_btn(page, "立即查询"):

@@ -33,11 +33,28 @@ def strip15(v):
     return str(v).strip().replace(".0", "")
 
 
+
 def main():
     if len(sys.argv) < 2:
         print(json.dumps({"error": "缺少料号参数"}, ensure_ascii=False))
         return
-    mat = sys.argv[1].strip()
+
+    # 支持多个料号，逐个处理并聚合
+    materials = [a.strip() for a in sys.argv[1:] if a.strip()]
+    if not materials:
+        print(json.dumps({"error": "缺少料号参数"}, ensure_ascii=False))
+        return
+
+    all_results = []
+    for mat in materials:
+        result = process_single_material(mat)
+        all_results.append(result)
+
+    print(json.dumps(all_results, ensure_ascii=False, indent=2))
+
+
+def process_single_material(mat):
+    """处理单个料号，返回本料号查询结果"""
     if mat.endswith("-"):
         mat = mat  # 保留末尾横杠作为合法字符
     mat_l = mat.lower()
@@ -49,7 +66,7 @@ def main():
     try:
         rows = _load(os.path.join(BASE, "库存报表.xlsx"))
         inv = []
-        for r in rows[2:]:  # 表头在第2行(索引1)，数据从第3行(索引2)开始
+        for r in rows[2:]:
             if r is None or len(r) < 8:
                 continue
             material, org, wh, pos, qty = r[0], r[2], r[3], r[5], r[6]
@@ -70,8 +87,6 @@ def main():
                 })
         result["库存(M03/WL301)"] = inv
 
-        # 库存补充列：组织=M03，库位∈{Y0001,Y0002,Y0003} 的合计数量（不分供应商）
-        # 注意: 需要单独再遍历全表（read_only=False 下可重复迭代 rows 列表）
         y_sum = 0
         y_warehouses = {"Y0001", "Y0002", "Y0003"}
         for r in rows[2:]:
@@ -90,7 +105,6 @@ def main():
         rows = _load(os.path.join(BASE, "送货单查询.xlsx"))
         hdr = rows[0]
         idx = {name: i for i, name in enumerate(hdr)}
-        # 列名定位
         col_recv = idx.get("是否接收")
         col_ins = idx.get("是否报检")
         col_mat = idx.get("物料编码")
@@ -99,8 +113,8 @@ def main():
         col_qty = idx.get("送货数量")
         col_insq = idx.get("报检数量")
 
-        deliver = OrderedDict()   # 未接收+未报检 -> 送货数量 (按供应商)
-        inspect = OrderedDict()   # 未接收+已报检 -> 报检数量 (按供应商)
+        deliver = OrderedDict()
+        inspect = OrderedDict()
         for r in rows[1:]:
             if r is None:
                 continue
@@ -214,6 +228,8 @@ def main():
         result["请购单(不分供应商, 行状态=下达)"] = pr_total
     except Exception as e:
         result["请购单(不分供应商, 行状态=下达)"] = {"error": str(e)}
+
+    return result
 
     print(json.dumps(result, ensure_ascii=False, indent=2))
 

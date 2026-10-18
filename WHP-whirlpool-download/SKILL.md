@@ -115,7 +115,7 @@ E:/SKILLS/.venv/Scripts/python.exe scripts/download_secure_config.py
      - 已发放工单推式料发料明细 → report1 目录
      - SCM转订单无效清单 → report2 目录
      - 库存报表 → stock 目录
-     - BOM循环查询 → bom 目录（需 OA 计划.xlsx 物料编码）
+     - BOM循环查询 → `D:\360安全浏览器下载`（需 OA 计划.xlsx 物料编码）
 
 ### 单模块模式（`--module scm|oa|fanruan`）
 - 只运行指定模块，跳过其他两个
@@ -133,12 +133,16 @@ E:/SKILLS/.venv/Scripts/python.exe scripts/download_secure_config.py
 - `fanruan_password.dat` - 帆软密码（AES-256 加密）
 
 ### 下载目录配置
-| 配置项 | 默认路径 | 说明 |
+当前实际值（来自 `scripts/download_runtime_config.json`）：
+
+| 配置项 | 实际路径 | 说明 |
 |---------|---------|------|
-| `scm.dir_task1-5` | `E:\...\scm_task{1-5}` | SCM 各任务下载目录 |
-| `fanruan.dir_bom` | `D:\360安全浏览器下载\bom` | BOM 循环查询目录 |
-| `fanruan.dir_report1/2/stock` | `E:\...\report1/2/stock` | 帆软报表目录 |
-| `oa.plan_dir` | `E:\...\oa_plan` | OA 计划文件目录 |
+| `scm.dir_task1-5` | `E:\OneDrive\桌面\桌面临时文件\PMC小工具\回货引用文件\加载文件` | SCM 5 个任务的导出目录（5 项指向同一目录） |
+| `fanruan.dir_bom` | `D:\360安全浏览器下载` | BOM 循环查询目录（103 个料号 xlsx 直接落在此目录，无 `\bom` 子目录） |
+| `fanruan.dir_report1/2/stock` | `E:\OneDrive\桌面\桌面临时文件\PMC小工具\回货引用文件\加载文件` | 帆软报表目录（3 项指向同一目录） |
+| `oa.plan_dir` | `E:\OneDrive\桌面\桌面临时文件\PMC小工具\回货引用文件\加载文件` | OA 计划.xlsx 目录 |
+
+> 说明：`D:\360安全浏览器下载` 是 `download_secure_config.py` / `config_example.py` 里的默认值，现有运行时配置也用它，未加 `\bom` 子目录。
 
 ## 登录凭证
 
@@ -148,7 +152,7 @@ E:/SKILLS/.venv/Scripts/python.exe scripts/download_secure_config.py
 
 ## 浏览器
 
-- 使用 msedge（无头模式，默认不显示浏览器窗口；调试或手动输验证码时加 `--visible`）
+- 使用 msedge（**默认有头模式，显示浏览器窗口**；后台静默运行时加 `--headless`）
 - 每个系统共享同一浏览器实例
 - Cookie 持久化，下次运行无需重新登录（12小时内有效）
 - 完成后自动关闭浏览器
@@ -162,6 +166,7 @@ E:/SKILLS/.venv/Scripts/python.exe scripts/download_secure_config.py
 | `scripts/whirlpool_common.py` | 公共模块（浏览器创建、日志、密码编解码） |
 | `scripts/download_secure_config.py` | 安全配置（AES-256加密密码设置/管理） |
 | `scripts/config_example.py` | 配置模板（首次运行参考） |
+| `scripts/test_login_retry.py` | SCM 登录重试逻辑的离线桩测试（不联网，退出码 0=通过） |
 
 ## 异常处理
 
@@ -171,7 +176,10 @@ E:/SKILLS/.venv/Scripts/python.exe scripts/download_secure_config.py
   - ⚠️ **禁止只凭退出码判定成功**（早期版本整体失败也返回 0）：必须核对日志中 `SCM: 成功N, 失败M` / `OA: …` / `帆软: 成功N, 失败M` 三行摘要
 - 断点续传：单个任务失败不影响后续任务
 - Cookie 过期时自动重新登录
-- 验证码 OCR 3次失败后提示手动输入
+- 验证码：**整轮登录最多重试 3 次**（识别 → 填码 → 提交 → 校验是否真的登录成功），
+  每次失败会自动关闭"验证码错误"弹窗并点击验证码图刷新，再试下一次；
+  3 次均失败才提示手动输入——且**仅在交互终端**下提示，后台/管道运行没有 stdin，
+  会直接判定失败退出（不会卡在 `input()`），并保存 `debug_scm_login.png` 现场截图。
 - 所有异常记录到日志文件
 - 日志位置：`scripts/logs/report_downloader.log`（单文件，每次执行覆盖，仅保留最近一次）
 
@@ -181,3 +189,11 @@ E:/SKILLS/.venv/Scripts/python.exe scripts/download_secure_config.py
 - 原项目路径：`e:\whirlpool-china\`
 - 技能路径：`E:\SKILLS\WHP-whirlpool-download\`
 - 如果 SCM/OA/帆软页面元素变化，需更新 `unified_report_downloader.py` 中的选择器
+- **各页签的"组织"字段名不一致（易踩坑，2026-10-15 修复）**：
+  - 送货通知查询 / 请购单查询 → `sap_org_code`
+  - 送货单查询 / PO未结量汇总查询 → `organization_code`
+  - `_tab_org_search()` 接受**候选列表**并按顺序探测第一个存在的字段：把该页签真实字段名放首位；
+    顺序放错不会导致功能失败（会自动回退到下一个候选），只是多一次无效探测。
+    仅当**全部候选都不中**时才打印一条 `[FAIL] 未找到组织字段（候选: ...）`，
+    回退命中时会打印 `[OK] 组织字段回退命中: <name>` 作为页面变更预警。
+    旧实现在候选循环里逐个打印 `[FAIL] 触发 xxx 搜索失败`，会误报成"筛选器失效"，已移除。

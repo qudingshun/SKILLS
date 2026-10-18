@@ -24,8 +24,8 @@ function main() {
 SCM 回货计划导入 & 发放 v2.2
 
 用法:
-  node run.js --material <料号> --qty <数量> [--date <日期>] [--remarks <备注>] [--visible]
-  node run.js --data "<料号1> <数量1> [日期1] [备注1], <料号2> <数量2> [日期2] [备注2]" [--visible]
+  node run.js --material <料号> --qty <数量> [--date <日期>] [--remarks <备注>] [--headless]
+  node run.js --data "<料号1> <数量1> [日期1] [备注1], <料号2> <数量2> [日期2] [备注2]" [--headless]
 
 示例:
   node run.js --material 70C012345 --qty 5
@@ -35,7 +35,7 @@ SCM 回货计划导入 & 发放 v2.2
   node run.js --data "70C11099 2 售后配件, ABC 3"
   node run.js --data "70C11099 2 2026-06-30, ABC 3"
   node run.js --data "70C11099 2 2026-06-30 紧急补货, ABC 3"
-  node run.js --visible --material 70C012345 --qty 5
+  node run.js --headless --material 70C012345 --qty 5
     `);
     return;
   }
@@ -107,13 +107,13 @@ SCM 回货计划导入 & 发放 v2.2
   }
 
   console.log(`\n=== SCM 回货计划导入 & 发放 v2.2 ===`);
-  const visibleMode = args.includes("--visible");
+  const headlessMode = args.includes("--headless");
   console.log(`数据: ${dataArg}`);
-  console.log(`模式: ${visibleMode ? "可见" : "无头"}`);
+  console.log(`模式: ${headlessMode ? "无头" : "有头"}`);
   console.log(`Python: ${VENV_PYTHON}`);
   console.log(`Python 脚本: ${PYTHON_SCRIPT}\n`);
 
-  const visibleArg = visibleMode ? " --visible" : "";
+  const visibleArg = headlessMode ? " --headless" : "";
 
   try {
     const result = execSync(

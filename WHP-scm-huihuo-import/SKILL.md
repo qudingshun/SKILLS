@@ -5,7 +5,7 @@ description: >
   登录 SCM 系统，自动完成回货计划的新增导入（填写6列数据）、保存审核，
   以及回货计划的筛选全选发放。
   
-  Trigger keywords: 回货, huihuo, 回货计划, SCM回货, 帮我回货, 无头回货, headless回货
+  Trigger keywords: 回货, huihuo, 回货计划, SCM回货, 帮我回货, 有头回货, 无头回货, headless回货
   
   Usage examples:
   - "帮我回货 70C012345 5"
@@ -42,7 +42,7 @@ description: >
 {
   "tool": "exec",
   "params": {
-    "command": "node scripts/run.js --material \"70C012345\" --qty \"5\" [--date \"YYYY-MM-DD\"] [--remarks \"备注文字\"] [--visible]",
+    "command": "node scripts/run.js --material \"70C012345\" --qty \"5\" [--date \"YYYY-MM-DD\"] [--remarks \"备注文字\"] [--headless]",
     "workdir": "E:\\SKILLS\\WHP-scm-huihuo-import",
     "timeout": 600
   }
@@ -120,7 +120,7 @@ description: >
 5. 用户输入的中文逗号 `，` → 自动替换为英文逗号 `,`
 6. 多行输入先转换为逗号分隔后再传给 `--data`
 7. 启动后必须用 `process(poll)` 等待完成并执行 `process(log)` 获取完整日志再汇报
-8. 默认即无头模式（无需任何参数），浏览器窗口不可见后台静默运行；仅当用户明确要求「显示浏览器窗口」或「调试」时才追加 `--visible` 参数
+8. 默认即有头模式（显示浏览器窗口）；仅当用户明确要求「后台静默」或「无头」时才追加 `--headless` 参数
 
 ### Cross-model rules (IRONCLAD)
 
@@ -154,6 +154,14 @@ un.js`
 
 > **铁律：每次运行必须实时输出结果给用户。**
 
+> **⚡ 输出精简规则（2026-10-14 起，用户明确要求，跨模型必须遵守）**
+>
+> - **回货成功** → 只回复一条 **「回货成功」** 即可。
+>   **禁止**再输出：已回货的料号/数量清单、执行记录表、成功日志行、单据号明细、前几批历史清单、耗时/退出码等技术细节。
+> - **回货失败** → 才输出具体数据：**料号、数量、失败原因**（SCM 弹窗原文 / `release_error` / `[SKIP]` 原因），
+>   **并写入待办事项** `logs/todo.md`（未完成部分按固定 11 列格式记入待办表，并更新 `未回货合计`）。
+> - 用户明确要求「列出清单」或「输出待办」时才例外。
+
 ### "帮我回货 {料号} {数量} [日期] [备注]"
 ```bash
 node scripts/run.js --material "70C012345" --qty "5"
@@ -165,13 +173,13 @@ node scripts/run.js --material "70C012345" --qty "5" --remarks "售后配件"
 node scripts/run.js --material "70C012345" --qty "5" --date "2026-06-01" --remarks "售后配件"
 ```
 
-### 可见模式（用户明确要求"显示浏览器窗口"/"调试"时）
+### 无头模式（用户明确要求"后台静默"/"无头"时）
 ```bash
-node scripts/run.js --visible --material "70C012345" --qty "5"
+node scripts/run.js --headless --material "70C012345" --qty "5"
 # 多行：
-node scripts/run.js --visible --data "70C11099 2, 70A01234 3"
+node scripts/run.js --headless --data "70C11099 2, 70A01234 3"
 ```
-> ⚡ 默认即无头模式：浏览器窗口不可见，后台静默运行。`--visible` 可放在任意位置。
+> ⚡ 默认即有头模式：显示浏览器窗口，便于观察进度和排错。`--headless` 可放在任意位置，用于后台静默运行（浏览器窗口不可见）。
 
 ### 文件推送格式
 
@@ -208,7 +216,7 @@ node scripts/run.js --data "70C11099 2, 70A01234 3 紧急补货"
 5. 用户输入的中文逗号 `，` → 自动替换为英文逗号 `,`
 6. 多行输入先转换为逗号分隔后再传给 `--data`
 7. 启动后必须用 `process(poll)` 等待完成并执行 `process(log)` 获取完整日志再汇报
-8. 默认即无头模式（无需任何参数），浏览器窗口不可见后台静默运行；仅当用户明确要求「显示浏览器窗口」或「调试」时才追加 `--visible` 参数
+8. 默认即有头模式（显示浏览器窗口）；仅当用户明确要求「后台静默」或「无头」时才追加 `--headless` 参数
 
 ### Cross-model rules (IRONCLAD)
 
@@ -241,6 +249,14 @@ un.js`
 #### Result Output Policy
 
 > **铁律：每次运行必须实时输出结果给用户。**
+
+> **⚡ 输出精简规则（2026-10-14 起，用户明确要求，跨模型必须遵守）**
+>
+> - **回货成功** → 只回复一条 **「回货成功」** 即可。
+>   **禁止**再输出：已回货的料号/数量清单、执行记录表、成功日志行、单据号明细、前几批历史清单、耗时/退出码等技术细节。
+> - **回货失败** → 才输出具体数据：**料号、数量、失败原因**（SCM 弹窗原文 / `release_error` / `[SKIP]` 原因），
+>   **并写入待办事项** `logs/todo.md`（未完成部分按固定 11 列格式记入待办表，并更新 `未回货合计`）。
+> - 用户明确要求「列出清单」或「输出待办」时才例外。
 
 ## 执行流程（直通批量导入模式）
 
@@ -406,8 +422,8 @@ node scripts/run.js --material "70C012345" --qty "5" --date "2026-06-01" --remar
 ## 浏览器
 
 - 使用 msedge
-- 默认无头模式（`headless=True`，浏览器窗口不可见，后台静默运行）
-- `--visible` 参数启用可见模式（窗口可见便于调试）
+- 默认有头模式（`headless=False`，显示浏览器窗口，便于观察进度和排错）
+- `--headless` 参数启用无头模式（浏览器窗口不可见，后台静默运行）
 - 端口: 9222 (远程调试)
 - 完成后自动关闭浏览器
 
@@ -435,6 +451,11 @@ node scripts/run.js --material "70C012345" --qty "5" --date "2026-06-01" --remar
 - 验证码 OCR 依赖 `ddddocr`，首次使用会自动下载模型文件
 
 ## 已知修复记录
+
+### ⚡ 浏览器默认改为有头模式（2026-10-16）
+- **whirlpool-download / scm-huihuo-import 两个技能**的浏览器默认从无头改为**有头（显示窗口）**，便于观察回货进度和排错
+- 新增 `--headless` 参数切回无头后台静默；`--visible` 保留兼容（等价于默认的有头）
+- Python 侧 `create_browser(headless=False)`；`scripts/run.js` 解析 `--headless` 并透传
 
 ### ⚠️ 批量导入重复计划记录（2026-09-26）
 - **触发条件**：同一 session 中对同一料号多次 `node scripts/run.js --data` 导入，即使第一次的发放（release）失败
