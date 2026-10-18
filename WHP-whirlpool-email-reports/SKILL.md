@@ -64,6 +64,9 @@ node E:/SKILLS/WHP-whirlpool-email-reports/scripts/download-reports.cjs
 ## 技术要点
 - 网易企业邮 IMAP **不支持**中文 SEARCH FROM/SUBJECT
   → 改用 `SEARCH SINCE` + 批量扫描头部做本地匹配
+- **波轮出口日常报表 (qingyu_zhou)**：主题常被改动（如「10.15」），因此配置 `attachmentOnly: true`
+  → 只按「发件人 + 附件名含"波轮出口日常报表」」命中，主题不作条件；发件人命中后拉全文验附件，未命中最多回溯 30 封候选
+- 其余两份报表仍为「发件人 + 主题关键词」双条件
 - 文件夹名使用 IMAP Modified UTF-7 编码（预解码对照表见脚本）
 - 发件人/主题使用 iconv-lite 解码 GB2312/GBK 编码
 - Excel 生成使用 xlsx 库

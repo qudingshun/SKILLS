@@ -33,6 +33,7 @@ const REPORTS = [
     sender: 'qingyu_zhou@whirlpool-china.com',
     keyword: '波轮出口日常报表',
     fileFilter: '波轮出口日常报表',
+    attachmentOnly: true,   // 主题可能被改动 → 只按"附件名"命中，主题仅作展示
     dest: '发货',
   },
   {
@@ -136,32 +137,50 @@ async function main() {
 
     if(total === 0) { console.log('   ❌ 空文件夹'); continue; }
 
-    let foundId = null;
     const scanCount = Math.min(500, total);
-    console.log('   🔍 从最新开始扫描'+scanCount+'封，找含"'+report.keyword+'"的邮件...');
+    // attachmentOnly 模式：发件人命中后拉全文看附件名，未命中则继续往前找（最多试 MAX_FULL_FETCH 封）
+    const byAtt = !!report.attachmentOnly;
+    const MAX_FULL_FETCH = 30;
+    const rule = byAtt
+      ? '发件人含 "'+report.sender+'" 且附件名含"'+report.fileFilter+'"（不卡主题）'
+      : '发件人含 "'+report.sender+'" 且主题含"'+report.keyword+'"';
+    console.log('   🔍 从最新开始扫描'+scanCount+'封，匹配: '+rule);
+
+    let found = null;   // { id, raw, parsed, subject, date }
+    let tried = 0;
     for(let i = total; i > total - scanCount; i--) {
       const hLines = await fetchHeaderLines(i);
       const from = findHeader(hLines, 'From') || '';
       const subject = decodeSubject(findHeader(hLines, 'Subject') || '');
 
-      if(from.includes(report.sender) && subject.includes(report.keyword)) {
-        console.log('   ✅ 找到! #'+i);
-        console.log('      主题: '+subject.slice(0,80));
-        console.log('      日期: '+(findHeader(hLines,'Date')||'').slice(0,30));
-        foundId = i;
-        break;
+      if(!from.includes(report.sender)) continue;
+      if(!byAtt && !subject.includes(report.keyword)) continue;
+
+      tried++;
+      if(byAtt && tried > MAX_FULL_FETCH) { console.log('   ⚠️ 已检查'+MAX_FULL_FETCH+'封候选邮件仍无匹配附件，停止往前扫'); break; }
+
+      const raw = await fetchFullEmail(i);
+      const parsed = await simpleParser(raw);
+      if(byAtt && !(parsed.attachments||[]).some(a => (a.filename||'').includes(report.fileFilter))) {
+        console.log('   ⏭️ #'+i+' 主题「'+subject.slice(0,40)+'」无匹配附件，继续往前找');
+        continue;
       }
+
+      console.log('   ✅ 找到! #'+i);
+      console.log('      主题: '+subject.slice(0,80));
+      console.log('      日期: '+(findHeader(hLines,'Date')||'').slice(0,30));
+      found = { id:i, raw, parsed, subject };
+      break;
     }
 
-    if(!foundId) {
+    if(!found) {
       console.log('   ❌ 未在最近'+scanCount+'封中找到匹配邮件');
       continue;
     }
 
-    console.log('   📥 下载邮件 #'+foundId+'...');
-    const raw = await fetchFullEmail(foundId);
-    const parsed = await simpleParser(raw);
-    console.log('      ✅ '+(raw.length/1024).toFixed(1)+' KB, '+ (parsed.attachments?.length||0)+' 个附件');
+    console.log('   📥 下载邮件 #'+found.id+'...');
+    const parsed = found.parsed;
+    console.log('      ✅ '+(found.raw.length/1024).toFixed(1)+' KB, '+ (parsed.attachments?.length||0)+' 个附件');
 
     const destDir = DIR[report.dest];
     if(!fs.existsSync(destDir)) fs.mkdirSync(destDir,{recursive:true});
