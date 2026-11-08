@@ -1,6 +1,6 @@
 /**
- * 邮件下载 - 手动遍历最近邮件，本地筛选
- * 绕过 qiye.163.com IMAP SEARCH 不支持 FROM/SUBJECT 中文搜索的缺陷
+ * Email report downloader - manual scan with local filtering
+ * Workaround for qiye.163.com IMAP SEARCH not supporting FROM/SUBJECT Chinese queries
  */
 const net = require('net');
 const { simpleParser } = require('mailparser');
@@ -33,7 +33,7 @@ const REPORTS = [
     sender: 'qingyu_zhou@whirlpool-china.com',
     keyword: '波轮出口日常报表',
     fileFilter: '波轮出口日常报表',
-    attachmentOnly: true,   // 主题可能被改动 → 只按"附件名"命中，主题仅作展示
+    attachmentOnly: true,   // subject may be modified → match by attachment name only
     dest: '发货',
   },
   {
@@ -45,45 +45,98 @@ const REPORTS = [
   },
 ];
 
-const iconv = require('iconv-lite');
+// ── RFC2047 主题解码（不依赖 iconv-lite，Node 自带 TextDecoder 支持 gbk）──
+const UTF8_DEC = new TextDecoder('utf-8');
+const GBK_DEC = new TextDecoder('gbk');
+
+function decodeEncodedWords(s) {
+  return s.replace(/=\?([^?]+)\?([BbQq])\?([^?]*)\?=/g, (m, charset, enc, text) => {
+    try {
+      let bytes;
+      if (enc.toUpperCase() === 'B') {
+        bytes = Buffer.from(text, 'base64');
+      } else {
+        // Q 编码：_ 代表空格，=XX 为十六进制
+        bytes = Buffer.from(text.replace(/_/g, ' ')
+          .replace(/=([0-9A-Fa-f]{2})/g, (x, h) => String.fromCharCode(parseInt(h, 16))), 'latin1');
+      }
+      const cs = charset.toLowerCase().replace(/_/g, '-');
+      const dec = (cs === 'utf-8' || cs === 'utf8') ? UTF8_DEC : GBK_DEC;
+      return dec.decode(bytes);
+    } catch (e) { return m; }
+  });
+}
+
 function decodeSubject(s) {
-  if(!s) return '';
-  try {
-    return s.replace(/=\?(UTF-8|utf-8)\?B\?([^?]+)\?=/g, (m,e,b)=>Buffer.from(b,'base64').toString('utf-8'))
-            .replace(/=\?(GB2312|gb2312|GBK|gbk)\?B\?([^?]+)\?=/g, (m,e,b)=>iconv.decode(Buffer.from(b,'base64'),'gbk'));
-  } catch { return s; }
+  if (!s) return '';
+  // RFC2047：相邻 encoded-word 之间的折行空白应当丢弃，否则会把空格塞进主题中间
+  return decodeEncodedWords(s.replace(/(\?=)\s+(=\?)/g, '$1$2'));
 }
 
 function findHeader(lines, field) {
-  const r = new RegExp('^'+field+':\s*(.+)', 'im');
-  for(const l of lines) { const m = l.match(r); if(m) return m[1].trim(); }
+  const r = new RegExp('^' + field + ':\\s*(.+)', 'im');
+  for (const l of lines) { const m = l.match(r); if (m) return m[1].trim(); }
   return '';
 }
 
-let tag=0,pending={},buf='',responses=[],litRem=0,litD='',inLit=false;
+// ── IMAP 协议层：literal 的长度单位是「字节」，全程按 Buffer 处理 ──
+let tag = 0, pending = {}, buf = Buffer.alloc(0), responses = [], litRem = 0, litChunks = [], inLit = false;
 const sock = net.connect(CFG.port, CFG.host);
-sock.on('data',(d)=>{buf+=d.toString();
-while(buf.length){
-if(inLit){const n=Math.min(litRem,buf.length);litD+=buf.slice(0,n);buf=buf.slice(n);litRem-=n;
-if(litRem===0){inLit=false;if(buf.startsWith('\r\n'))buf=buf.slice(2);responses.push('__LIT:'+litD);litD='';}else break;}
-const i=buf.indexOf('\r\n');if(i===-1)break;
-const l=buf.slice(0,i);buf=buf.slice(i+2);if(!l)continue;
-const lm=l.match(/\{(\d+)\}$/);if(lm){inLit=true;litRem=parseInt(lm[1]);litD='';responses.push(l);continue;}
-const tm=l.match(/^a(\d{3})\s+(OK|NO|BAD)\s+(.*)/);
-if(tm&&pending['a'+tm[1]]){pending['a'+tm[1]]({l,status:tm[2],msg:tm[3],responses:[...responses]});responses=[];pending['a'+tm[1]]=null;}
-else responses.push(l);}});
+sock.on('data', (d) => {
+  buf = Buffer.concat([buf, d]);
+  for (;;) {
+    if (inLit) {
+      const n = Math.min(litRem, buf.length);
+      litChunks.push(buf.subarray(0, n));
+      buf = buf.subarray(n);
+      litRem -= n;
+      if (litRem > 0) return;                       // 等下一块数据
+      inLit = false;
+      if (buf.length >= 2 && buf[0] === 0x0d && buf[1] === 0x0a) buf = buf.subarray(2);
+      responses.push({ lit: true, data: Buffer.concat(litChunks) });
+      litChunks = [];
+      continue;
+    }
+    const i = buf.indexOf('\r\n');
+    if (i === -1) return;
+    const l = buf.subarray(0, i).toString('latin1');
+    buf = buf.subarray(i + 2);
+    if (!l) continue;
+    const lm = l.match(/\{(\d+)\}$/);
+    if (lm) { inLit = true; litRem = parseInt(lm[1]); litChunks = []; responses.push(l); continue; }
+    const tm = l.match(/^a(\d{3})\s+(OK|NO|BAD)\s+(.*)/);
+    if (tm && pending['a' + tm[1]]) {
+      const cb = pending['a' + tm[1]];
+      delete pending['a' + tm[1]];
+      cb({ l, status: tm[2], msg: tm[3], responses: [...responses] });
+      responses = [];
+    } else responses.push(l);
+  }
+});
+sock.on('error', (e) => { console.error('❌ 连接错误:', e.message); process.exit(1); });
 
-function send(t){
-  return new Promise((res,rej)=>{tag++;const id='a'+String(tag).padStart(3,'0');pending[id]=res;sock.write(id+' '+t+'\r\n');setTimeout(()=>{if(pending[id]){delete pending[id];rej('TO');}},30000);});
+function send(t) {
+  return new Promise((res, rej) => {
+    tag++;
+    const id = 'a' + String(tag).padStart(3, '0');
+    const timer = setTimeout(() => {
+      if (pending[id]) { delete pending[id]; rej(new Error('IMAP 命令超时(60s): ' + t)); }
+    }, 60000);
+    pending[id] = (r) => { clearTimeout(timer); res(r); };
+    sock.write(id + ' ' + t + '\r\n');
+  });
 }
 
 async function fetchHeaderLines(seq) {
-  const r = await send('FETCH '+seq+' (BODY.PEEK[HEADER.FIELDS (FROM SUBJECT DATE)])');
+  const r = await send('FETCH ' + seq + ' (BODY.PEEK[HEADER.FIELDS (FROM SUBJECT DATE)])');
   const lines = [];
-  for(const resp of r.responses) {
-    if(resp.startsWith('__LIT:')) {
-      const content = resp.slice(6);
-      lines.push(...content.split('\r\n').filter(Boolean));
+  for (const resp of r.responses) {
+    if (!resp || !resp.lit) continue;
+    // 展开折行（续行以空格/Tab 开头），否则 From 里的地址会被截断
+    for (const line of resp.data.toString('utf8').split('\r\n')) {
+      if (!line) continue;
+      if (/^[ \t]/.test(line) && lines.length) lines[lines.length - 1] += ' ' + line.trim();
+      else lines.push(line);
     }
   }
   return lines;
@@ -91,11 +144,11 @@ async function fetchHeaderLines(seq) {
 
 async function fetchFullEmail(seq) {
   const r = await send('FETCH ' + seq + ' (BODY[])');
-  let content = '';
-  for(const resp of r.responses) {
-    if(resp.startsWith('__LIT:')) content += resp.slice(6);
+  const parts = [];
+  for (const resp of r.responses) {
+    if (resp && resp.lit) parts.push(resp.data);
   }
-  return content;
+  return Buffer.concat(parts);
 }
 
 async function moveOldFiles() {
@@ -131,14 +184,14 @@ async function main() {
     console.log('   发件人: '+report.sender);
 
     r = await send('SELECT "'+report.folder+'"');
-    const exists = r.responses.find(x=>x.includes('EXISTS'));
+    const exists = r.responses.find(x => typeof x === 'string' && x.includes('EXISTS'));
     const total = exists ? parseInt(exists.match(/(\d+)\s+EXISTS/)[1]) : 0;
     console.log('   📂 打开文件夹: 共'+total+'封');
 
     if(total === 0) { console.log('   ❌ 空文件夹'); continue; }
 
     const scanCount = Math.min(500, total);
-    // attachmentOnly 模式：发件人命中后拉全文看附件名，未命中则继续往前找（最多试 MAX_FULL_FETCH 封）
+    // attachmentOnly mode: after sender match, fetch full email to check attachment name; stop after MAX_FULL_FETCH candidates
     const byAtt = !!report.attachmentOnly;
     const MAX_FULL_FETCH = 30;
     const rule = byAtt

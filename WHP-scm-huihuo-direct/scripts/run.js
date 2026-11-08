@@ -37,7 +37,7 @@ SCM 直接回货（免核查）v1.0
 
 说明:
   免核查直通执行——不查 PO、不判断实际可用、不写待办，按用户给定数量直接导入并发放。
-  需要"先核查再回货"请用 WHP-scm-huihuo-import 技能。
+  需要"先核查再回货"（审核回货）请用 WHP-scm-huihuo-import 技能。
 
 示例:
   node run.js --material 70C012345 --qty 5

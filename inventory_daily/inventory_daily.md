@@ -25,14 +25,17 @@
 ## 📂 项目结构
 
 ```text
-E:\getBOM\Inventory Daily Report\
-├── inventory_daily.py          ← 主程序入口（本工具）
-├── inventory_daily.md          ← 本文件
-├── inventory_daily_report.py   ← 旧版脚本（含邮件下载，保留备份）
+E:\SKILLS\inventory_daily\
+├── scripts\inventory_daily.py  ← 主程序入口（v1.0.3，实际执行文件，目录内唯一脚本）
+├── data\代码库.xlam            ← VBA 加载项（「产量出货更新」宏）
+├── inventory_daily.md          ← 本文件（旧版说明，路径已过时）
 ├── openclaw_skill.py           ← OpenClaw 技能入口
-├── README.md / SKILL.md        ← 技能与项目说明
-└── DownMail/                   ← IMAP 邮件下载模块（旧版使用）
+└── SKILL.md                    ← 技能说明（以这份为准）
 ```
+
+> ⚠️ 2026-10-29 更正：旧版 `inventory_daily_report.py` 与 `DownMail/` 模块**已不在此目录**，
+> 也不在 `E:\getBOM\...`。邮件下载改由 `WHP-whirlpool-email-reports\scripts\download-reports.cjs` 承担，
+> 本技能只负责 Excel 宏刷新 + 另存。旧树 `E:\whirlpool-china\inventory_daily_report.py` 已废弃。
 
 ---
 

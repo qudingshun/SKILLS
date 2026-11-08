@@ -14,6 +14,9 @@ Pillow
 # Playwright / 浏览器自动化
 playwright>=1.62.0
 
+# Windows UI 自动化（WHP-whirlpool-erp：驱动 Oracle Forms Java 窗口）
+pywinauto
+
 # 数据处理
 pandas
 openpyxl
@@ -24,6 +27,9 @@ pywin32
 
 # OCR 验证码识别（WHP-scm-huihuo-import / WHP-scm-received-inbound / WHP-whirlpool-download）
 ddddocr
+
+# Oracle Forms 界面文字识别（WHP-whirlpool-erp：识别工厂/字段文本）
+rapidocr-onnxruntime
 
 # SCM 登录加密
 cryptography

@@ -105,11 +105,17 @@ class SCMSystem:
                 return JSON.stringify({rc:bc,cols:cols,data:data});
             }
         }
-        // DOM 兜底
+        // DOM 兜底（限定当前活动页签的 DOM，避免抓到其他页签/弹窗的空网格）
         try {
-            var v=document.querySelector('.x-grid-view'); if(!v) return JSON.stringify({e:'nodata'});
+            var scope=document;
+            try {
+                var t2=tp?tp.getActiveTab():null;
+                var el=t2&&t2.getEl?t2.getEl().dom:null;
+                if(el&&el.querySelector('.x-grid-view')) scope=el;
+            } catch(e2){}
+            var v=scope.querySelector('.x-grid-view'); if(!v) return JSON.stringify({e:'nodata'});
             var rows=v.querySelectorAll('.x-grid-row'); if(!rows||rows.length===0) return JSON.stringify({e:'nodata'});
-            var h=document.querySelector('.x-grid-header-ct'); var cols=[];
+            var h=scope.querySelector('.x-grid-header-ct'); var cols=[];
             if(h){var hcs=h.querySelectorAll('.x-column-header'); for(var hc of hcs){
                 var t=hc.getAttribute('data-headertext')||'';
                 if(!t){var ts=hc.querySelector('.x-column-header-text'); if(ts)t=ts.textContent.trim();}
@@ -798,38 +804,46 @@ class SCMSystem:
             safe_print(f"  [操作] [FAIL] 组织搜索弹窗: {e}")
             return False
 
+    GRID_BUSY_JS = r"""() => {
+        // 数据仍在加载：存在可见蒙层，或网格区域显示“读取中/加载中”
+        try {
+            var masks = document.querySelectorAll('[class*="x-mask"]');
+            for (var m of masks) {
+                if (m.style.display !== "none" && m.offsetParent !== null) return true;
+            }
+            var txt = (document.body ? document.body.innerText : "") || "";
+            if (txt.indexOf("读取中") >= 0 || txt.indexOf("加载中") >= 0) return true;
+            return false;
+        } catch(e) { return false; }
+    }"""
+
     async def _tab_wait_grid(self, page, label="查询", timeout=120):
-        """等待网格数据就绪（先查数据，无数据时等蒙层消失）"""
+        """等待网格数据就绪（先查数据；仍在读取中则继续等到超时，不提前放弃）"""
         safe_print(f"  [等待] {label}（最长{timeout}s）...")
         for i in range(timeout):
             await asyncio.sleep(1)
 
             # 1. 先查网格数据
             result = json.loads(await page.evaluate(self.EXTRACT_GRID))
-            if not ('e' in result):
-                cols, cnt = result.get('cols', []), result.get('rc', 0)
-                if cols and cnt > 0:
-                    if not (cnt <= 5 and len(cols) <= 3 and i < 60):
-                        safe_print(f"  [等待] [OK] 加载完成（约{i}秒，{cnt}行，{len(cols)}列）")
-                        return True
-                if i >= 10:
-                    safe_print(f"  [等待] [WARN] 网格无有效数据（{i}秒），继续")
-                    return False
+            cols, cnt = (result.get("cols") or []), (result.get("rc") or 0)
+            if not ('e' in result) and cols and cnt > 0:
+                # 少量行 + 少量列（可能是残留/空网格）不认定完成
+                if not (cnt <= 5 and len(cols) <= 3 and i < 60):
+                    safe_print(f"  [等待] [OK] 加载完成（约{i}秒，{cnt}行，{len(cols)}列）")
+                    return True
 
-            # 2. 数据未就绪时等蒙层
-            if i >= 3:
-                loading = await page.evaluate("""() => {
-                    try {
-                        var masks = document.querySelectorAll('[class*="x-mask"]');
-                        for (var m of masks) {
-                            if (m.style.display !== "none" && m.offsetParent !== null) return true;
-                        }
-                        return false;
-                    } catch(e) { return false; }
-                }""")
-                if not loading and i >= 30:
-                    safe_print(f"  [等待] [WARN] 网格无数据（{i}秒），继续")
-                    return False
+            # 2. 仍在读取中 → 继续等（2026-10-22 修复：请购单查询偶发长时间“读取中”，
+            #    原逻辑 10 秒即放弃，导致误判“网格无有效数据”并跳过导出）
+            busy = await page.evaluate(self.GRID_BUSY_JS)
+            if i >= 3 and busy:
+                if i % 20 == 0:
+                    safe_print(f"  [等待] 仍在读取中（{i}秒），继续等待...")
+                continue
+
+            # 3. 确实没数据 → 提前结束
+            if i >= 10:
+                safe_print(f"  [等待] [WARN] 网格无有效数据（{i}秒），继续")
+                return False
 
         safe_print(f"  [等待] [WARN] 超时（{timeout}s），继续")
         return False
@@ -1506,15 +1520,8 @@ class OASystem:
             plan_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "downloads", "oa_plan")
         os.makedirs(plan_dir, exist_ok=True)
 
-        # 检查 Excel 是否已存在且较新（1小时内）
-        excel_path = os.path.join(plan_dir, "计划.xlsx")
-        if os.path.exists(excel_path):
-            mtime = os.path.getmtime(excel_path)
-            last_update = datetime.fromtimestamp(mtime)
-            now = datetime.now()
-            if (now - last_update).total_seconds() < 3600:
-                safe_print(f"[OA] [OK] 计划.xlsx 已存在（{last_update.strftime('%Y-%m-%d %H:%M')}）")
-                return True
+        # 每次执行都直接重新抓取，不校验 计划.xlsx 的时间新鲜度
+        safe_print("[OA] 强制重新下载生产计划（忽略 计划.xlsx 已有时间）")
 
         factory_code = self.config_manager.get_oa_config("factory_code", "M03")
 

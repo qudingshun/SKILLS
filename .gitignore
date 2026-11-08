@@ -37,6 +37,12 @@ cred.json
 # Per-skill backups of old / unused files (kept locally, NOT uploaded)
 _backup/
 _archive/
+*.bak-*
+
+# Local-only helpers that contain credentials, and local data/memory
+WHP-whirlpool-download/scripts/setup_passwords.py
+inventory_daily/data/
+.workbuddy/
 
 # Runtime state / cache
 **/.cache/

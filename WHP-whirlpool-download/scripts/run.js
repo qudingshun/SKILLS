@@ -77,7 +77,7 @@ Whirlpool China 统一报表下载工具 V2.2
     const result = execSync(cmd, {
       cwd: SCRIPT_DIR,
       stdio: "inherit",
-      timeout: 1200000, // 20 min timeout for full workflow
+      timeout: 2400000, // 40 min timeout for full workflow（SCM 单阶段就可能 15+ 分钟，20 分钟会中途被杀）
       env: { ...process.env, PYTHONIOENCODING: "utf-8", PYTHONUNBUFFERED: "1", WP_HEADLESS: headless ? "1" : "0" },
     });
     console.log("\n[OK] 报表下载执行完毕");
@@ -87,7 +87,7 @@ Whirlpool China 统一报表下载工具 V2.2
     if (err.signal === "SIGTERM") {
       console.error("\n[ERR] 脚本被终止");
     } else if (err.killed) {
-      console.error("\n[ERR] 脚本超时 (20分钟)");
+      console.error("\n[ERR] 脚本超时 (40分钟)");
     } else {
       console.error(`\n[ERR] 脚本异常退出 (code ${err.status || "?"})`);
     }

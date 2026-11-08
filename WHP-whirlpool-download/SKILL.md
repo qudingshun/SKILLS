@@ -1,7 +1,7 @@
 ---
 name: WHP-whirlpool-download
 description: >
-  Whirlpool China 统一报表下载工具 - 自动登录 SCM/OA/帆软三大系统，
+  Whirlpool China 统一报表下载工具 - 直接执行（不管上次下载时间），一次性下载 SCM+OA+帆软全量报表
   按 SCM→OA→帆软顺序执行全部报表下载任务。
   
   SCM模块使用优化版逻辑（ExtJS API导航 + 齐射收网 + 网格直提），
@@ -24,11 +24,26 @@ description: >
 
 ## 前置条件
 
-- 统一使用仓库虚拟环境 `E:\SKILLS\.venv`（依赖已随 `E:\SKILLS\requirements.txt` 安装）
-- 依赖安装/补齐:
+- 统一使用仓库虚拟环境 E:\SKILLS\.venv（依赖已随 E:\SKILLS
+equirements.txt 安装）
+- **关键依赖检查**：执行前必须确认以下模块可用，缺失时自动安装：
   ```bash
-  E:/SKILLS/.venv/Scripts/python.exe -m pip install -r E:/SKILLS/requirements.txt
-  E:/SKILLS/.venv/Scripts/python.exe -m playwright install msedge
+  # 检查 pandas（帆软报表解析必需）
+  E:/SKILLS/.venv/Scripts/python.exe -c "import pandas; print('pandas OK')" || \
+    E:/SKILLS/.venv/Scripts/python.exe -m pip install pandas --index-url https://pypi.tuna.tsinghua.edu.cn/simple
+  
+  # 检查 openpyxl（xlsx 解析必需）
+  E:/SKILLS/.venv/Scripts/python.exe -c "import openpyxl; print('openpyxl OK')" || \
+    E:/SKILLS/.venv/Scripts/python.exe -m pip install openpyxl --index-url https://pypi.tuna.tsinghua.edu.cn/simple
+  
+  # 检查 lxml（HTML/XML 解析必需）
+  E:/SKILLS/.venv/Scripts/python.exe -c "import lxml; print('lxml OK')" || \
+    E:/SKILLS/.venv/Scripts/python.exe -m pip install lxml --index-url https://pypi.tuna.tsinghua.edu.cn/simple
+  
+  # 检查 playwright（浏览器自动化必需）
+  E:/SKILLS/.venv/Scripts/python.exe -c "from playwright.sync_api import sync_playwright; print('playwright OK')" || \
+    E:/SKILLS/.venv/Scripts/python.exe -m pip install playwright --index-url https://pypi.tuna.tsinghua.edu.cn/simple && \
+    E:/SKILLS/.venv/Scripts/python.exe -m playwright install msedge
   ```
 - Edge 浏览器已安装（版本 80+）
 - 首次运行需先设置加密密码:
@@ -36,6 +51,11 @@ description: >
   E:/SKILLS/.venv/Scripts/python.exe scripts/download_secure_config.py
   ```
 
+## 执行前依赖验证
+
+**铁律**：在调用 unified_report_downloader.py 之前，必须先执行上述依赖检查。如果任何关键模块缺失，必须安装后再重试。**禁止跳过此步骤直接运行脚本**。
+
+> **Pitfall**：帆软报表导出为 xlsx 格式，需要 pandas+openpyxl 解析；SCM/OA 页面交互需要 playwright。任一缺失都会导致 ModuleNotFoundError，且错误信息不清晰（只报第一个缺失的模块）。必须按顺序检查并安装所有依赖。
 ## 触发指令
 
 ### ❗ 铁律（跨模型，绝不可违反）
@@ -51,7 +71,7 @@ description: >
   "params": {
     "command": "node scripts/run.js",
     "workdir": "E:\\SKILLS\\WHP-whirlpool-download",
-    "timeout": 1200
+    "timeout": 2400
   }
 }
 ```
@@ -86,7 +106,7 @@ E:/SKILLS/.venv/Scripts/python.exe scripts/download_secure_config.py
 2. workdir 固定：`E:\SKILLS\WHP-whirlpool-download`
 3. 命令体中禁止写 `cd ... && ...` 格式
 4. 禁止在 command 中使用全局 `py` / `python`，必须用 `E:/SKILLS/.venv/Scripts/python.exe`
-5. 默认超时 1200s（20分钟），因 SCM+OA+帆软全流程较慢
+5. 默认超时 2400s（40分钟），因 SCM+OA+帆软全流程较慢（SCM 单阶段就可能 15+ 分钟）
 6. 启动后必须用 `process(poll)` 等待完成后，读取 `scripts/logs/report_downloader.log` 获取执行结果再汇报（单文件，每次执行覆盖）
 
 ## 执行流程
@@ -108,6 +128,7 @@ E:/SKILLS/.venv/Scripts/python.exe scripts/download_secure_config.py
    - 登录 OA
    - 抓取当前月和次月生产计划
    - 生成 计划.xlsx → oa_plan 目录
+   - ⚠️ 每次执行都**强制重新抓取**：不校验 `计划.xlsx` 的时间新鲜度（哪怕 1 分钟前刚下载过也重新下载）
 
 3. **Phase 3: 帆软报表任务**（约10-30分钟）
    - 登录帆软报表系统
@@ -138,11 +159,71 @@ E:/SKILLS/.venv/Scripts/python.exe scripts/download_secure_config.py
 | 配置项 | 实际路径 | 说明 |
 |---------|---------|------|
 | `scm.dir_task1-5` | `E:\OneDrive\桌面\桌面临时文件\PMC小工具\回货引用文件\加载文件` | SCM 5 个任务的导出目录（5 项指向同一目录） |
-| `fanruan.dir_bom` | `D:\360安全浏览器下载` | BOM 循环查询目录（103 个料号 xlsx 直接落在此目录，无 `\bom` 子目录） |
+| `fanruan.dir_bom` | `D:\360安全浏览器下载` | BOM 循环查询目录（100+ 个料号 xlsx 直接落在此目录，无 `\bom` 子目录；数量随 BOM 清单变化） |
 | `fanruan.dir_report1/2/stock` | `E:\OneDrive\桌面\桌面临时文件\PMC小工具\回货引用文件\加载文件` | 帆软报表目录（3 项指向同一目录） |
 | `oa.plan_dir` | `E:\OneDrive\桌面\桌面临时文件\PMC小工具\回货引用文件\加载文件` | OA 计划.xlsx 目录 |
 
 > 说明：`D:\360安全浏览器下载` 是 `download_secure_config.py` / `config_example.py` 里的默认值，现有运行时配置也用它，未加 `\bom` 子目录。
+
+### ⚠️ 路径漂移踩坑（2026-10-23）
+
+`download_runtime_config.json` 被外部改动过（18:26:48），把 `scm.dir_*` / `fanruan.dir_*` / `oa.plan_dir` 指到 `桌面\PMC 小工具`、`dir_bom` 指到 `D:\360 安全浏览器下载`，与其余工具不一致，形成两棵各自独立的目录树。
+
+**根因**：本技能是报表下载的唯一写入方，但读方分散在多个技能，路径各自硬编码：
+
+| 路径使用方 | 读写 |
+|---|---|
+| WHP-whirlpool-download（SCM 5 份 / 帆软 3 份 / 计划.xlsx / BOM 106 个） | **写** |
+| WHP-scm-huihuo-import（回货）/ material-inventory-check（查料号）/ WHP-scm-received-inbound（已入库）/ bom-compare | **读** |
+
+读方一律用 `E:\OneDrive\桌面\桌面临时文件\PMC小工具\回货引用文件\加载文件` 和 `D:\360安全浏览器下载`（无空格）。
+
+**后果**：报表下载写进新树后，查料号 / 回货前置判断读到的是旧树里几小时前的 PO 剩余与已回货未分配，会算错「实际可用」。
+
+**预防**：改动本技能任一目录配置前，先确认与上表读方一致；每次下载后核对文件落地目录是否等于 `download_runtime_config.json` 的值，而不是只看「成功 N」。
+
+### ✅ 路径统一复查（2026-10-29）
+
+10-27 13:23 该配置再次被改，6 处指向 `桌面前期文件`（`scm.dir_task3` / `scm.dir_task5` /
+`fanruan.dir_report1` / `dir_report2` / `dir_stock` / `oa.plan_dir`），
+而 `scm.dir_task1/2/4` 仍在 `桌面临时文件`，形成「3 份落临时、6 份落前期」的劈叉。
+下游读方（15 处硬编码）与本技能 `download_secure_config.py`、`config_example.py` 的模板**全部**指向 `桌面临时文件`。
+已于 2026-10-29 全部改回 `桌面临时文件`，配置文件与上表恢复一致。
+
+**验证方法**：改完配置必须用 `ConfigManager` 真加载一次，不要肉眼看 JSON：
+
+```bash
+# workdir = E:/SKILLS/WHP-whirlpool-download/scripts
+E:/SKILLS/.venv/Scripts/python.exe -c "import sys;sys.path.insert(0,'.');from download_secure_config import ConfigManager;print(ConfigManager().configs)"
+```
+
+`workdir` 必须是 `scripts`：`run.js` 以 `cwd=scripts/` 启动 Python，`ConfigManager()` 收的是**相对路径**
+`download_runtime_config.json`，解析到 `scripts/download_runtime_config.json`。
+
+**同名空配置陷阱**：技能根目录曾有一个同名 `download_runtime_config.json`（内容为空，仅 3 字节 UTF-8 BOM），
+不被任何代码读取，纯属误导性残留，2026-10-29 已删除。
+
+**下载后验活别用 openpyxl read_only（2026-10-26）**：帆软导出的 xlsx（report1/report2/stock/BOM）`sheet dimension` 元数据可能是坏的——`read_only=True` 下 `calculate_dimension()` 返回 `A1:A1`、`max_row=1`、逐行迭代也只吐 1 行，但文件有 1-2.6MB、实际 2 万+ 行。**必须用 `load_workbook()`（不加 read_only）** 再读 `ws.dimensions` / 非空行数，否则会误判成「下载到空文件」而白重跑一轮。SCM 5 份与 OA 计划.xlsx 的维度元数据正常，不受影响。
+
+### ⚠️ 单次执行硬超时（2026-10-29 修复）
+
+**原值 20 分钟会中途杀进程**：`scripts/run.js` 的 `execSync` 原本是 `timeout: 1200000` ms（20 分钟），
+而 SCM 单阶段就可能 15+ 分钟，SCM→OA→帆软三阶段串行经常超过 20 分钟。
+超时后 Node 对 Python 发 SIGTERM，**`finally` 块不执行**，表现为：
+
+- 日志只写到 `OA: 成功` 就断，**没有** `帆软: 成功N, 失败M` 和 `全部完成` 行
+- `D:\360安全浏览器下载` 只多出前 1~2 个料号，其余仍是上一轮的文件
+- 但帆软 3 份报表（report1/report2/stock）其实已经落盘
+
+**已改**：`timeout` 提到 `2400000` ms（40 分钟），控制台超时提示同步改为「脚本超时 (40分钟)」；
+SKILL.md 里的 exec 调用也统一用 `"timeout": 2400`。
+
+**判据**：日志末行时间 **早于** 产物文件最后修改时间，且缺 `全部完成` → 判定为超时/被杀中断，不是下载失败。
+
+**未迁移的历史数据（2026-10-29 决定）**：当天落在 `桌面前期文件` 的 6 个文件（请购单查询、采购订单未结量、计划.xlsx、
+库存报表、已发放工单推式料发料明细、SCM-转订单无效清单）**保留不迁移**，等下一次全量重跑自然覆盖到正确目录。
+在此之前，读方查 `桌面临时文件` 会缺这 6 份（或读到更旧的版本），不要误判成下载失败。
+`D:\360安全浏览器下载` 当时也是混批（104 个 12:22–12:24 的旧文件 + 1 个 12:33:56 的新文件），同样等重跑刷新。
 
 ## 登录凭证
 
@@ -175,6 +256,14 @@ E:/SKILLS/.venv/Scripts/python.exe scripts/download_secure_config.py
   - 任一模块/任务失败、或异常中止 → 退出码 `1`，控制台打印 `[FAIL] 执行失败，未完成：<原因>`，日志写「执行失败（未完成）：<原因>，总用时：…」
   - ⚠️ **禁止只凭退出码判定成功**（早期版本整体失败也返回 0）：必须核对日志中 `SCM: 成功N, 失败M` / `OA: …` / `帆软: 成功N, 失败M` 三行摘要
 - 断点续传：单个任务失败不影响后续任务
+- **网格等待判据（2026-10-22 修复）**：`_tab_wait_grid()` 不再"10 秒没数据就放弃"。
+  只要页面仍处于读取状态（存在可见 `x-mask` 蒙层，或页面文本含 `读取中`/`加载中`），
+  就会一直等到该页签的 timeout（请购单 180s、其余 120s）。
+  根因：请购单查询偶发服务端长查询，页面显示"读取中…"，原逻辑 10 秒即判 `网格无有效数据` 并跳过导出，
+  导致 `请购单查询.xlsx` 连续多轮下载失败（文件停留在上一轮）。
+- **DOM 兜底只取活动页签（2026-10-22 修复）**：`EXTRACT_GRID` 的 DOM 兜底原先用
+  `document.querySelector('.x-grid-view')`，会抓到其他页签/组织弹窗的空网格（返回 2 行 2 列的假数据）。
+  改为优先在当前活动页签的 DOM 内查找，找不到才退回整页。
 - Cookie 过期时自动重新登录
 - 验证码：**整轮登录最多重试 3 次**（识别 → 填码 → 提交 → 校验是否真的登录成功），
   每次失败会自动关闭"验证码错误"弹窗并点击验证码图刷新，再试下一次；
@@ -186,7 +275,7 @@ E:/SKILLS/.venv/Scripts/python.exe scripts/download_secure_config.py
 ## 开发备注
 
 - SCM模块已改用优化版逻辑（ExtJS API导航 + 齐射收网 + 网格直提）
-- 原项目路径：`e:\whirlpool-china\`
+- 原项目路径：`e:\whirlpool-china\`（**已废弃，勿再引用**，见 `E:\whirlpool-china\DEPRECATED.md`）
 - 技能路径：`E:\SKILLS\WHP-whirlpool-download\`
 - 如果 SCM/OA/帆软页面元素变化，需更新 `unified_report_downloader.py` 中的选择器
 - **各页签的"组织"字段名不一致（易踩坑，2026-10-15 修复）**：

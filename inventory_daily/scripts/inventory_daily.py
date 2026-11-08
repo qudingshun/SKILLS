@@ -2,8 +2,8 @@
 import os, datetime, sys
 
 # 版本信息
-__version__ = "1.0.2"
-__version_date__ = "2026-09-07"
+__version__ = "1.0.3"
+__version_date__ = "2026-10-24"
 
 # 修复 Windows GBK 终端输出 Unicode emoji 的问题
 sys.stdout.reconfigure(encoding='utf-8', errors='replace')
@@ -84,7 +84,23 @@ def run():
             print(f"   [OK] 宏已启用")
         except Exception as e:
             print(f"   [WARN] 无法启用宏：{e}")
-        
+
+        # ── 关键：先取消「数据整理」的自动筛选，再跑宏 ──────────────
+        # 「数据整理」第 3 行的合计用的是 SUBTOTAL(9,...)，只统计"未被筛选隐藏"的行。
+        # 若工作簿保存时筛选仍处于启用状态（AutoFilterMode=True，约 300 行被隐藏），
+        # SUBTOTAL 返回 0/只算可见行，导致「汇总」期初库存/装柜数量变成上一班的数。
+        # 宏本身不重置筛选状态，所以必须在脚本里显式清掉。
+        print(f"   [1c-2] 检查「数据整理」自动筛选状态...")
+        try:
+            ds_pre = wb.Sheets("数据整理")
+            if ds_pre.AutoFilterMode:
+                ds_pre.AutoFilterMode = False
+                print(f"   [OK] 已清除自动筛选（原状态：AutoFilterMode=True）")
+            else:
+                print(f"   [SKIP] 未启用自动筛选，无需清除")
+        except Exception as e:
+            print(f"   [WARN] 清除自动筛选失败：{e}")
+
         print(f"   [1d] 执行宏：产量出货更新 ...")
         try:
             excel.Application.Run("产量出货更新")
@@ -118,6 +134,45 @@ def run():
 
         print(f"   本月计划={plan_qty} | 已完成下线={done} | 完成占比={ratio:.1%}")
         print(f"   期初库存={begin_stock} | 装柜={con_qty}台({container_cnt}柜) | 当前库存={cur_stock}\n")
+
+        # ─ Step 2b: 校验数据是否真的刷新（防"静默用旧数据"）────────
+        # 「数据整理」第 3 行是 SUBTOTAL(9,...) 合计行，受自动筛选影响：
+        # 若筛选隐藏了大部分行，合计会远小于实际值。因此用"最后有数据的日期"
+        # 与"合计是否合理"两道检查来判断这次宏是否真把数据刷进来了。
+        print("[Step 2b] 校验数据刷新状态...")
+        refreshed_ok = True
+        try:
+            ds = wb.Sheets("数据整理")
+            # 逐日找最后一个有下线/出库数据的日期（R 列起，每 4 列一天：下线/出库/库存/折算面积）
+            last_day = 0
+            for day in range(1, 32):
+                c0 = 18 + (day - 1) * 4
+                has = False
+                for r in range(5, 307):
+                    v = ds.Cells(r, c0).Value
+                    v2 = ds.Cells(r, c0 + 1).Value
+                    if (isinstance(v, (int, float)) and v) or (isinstance(v2, (int, float)) and v2):
+                        has = True
+                        break
+                if has:
+                    last_day = day
+
+            today_day = datetime.date.today().day
+            print(f"   最后有数据的日期：{last_day}日 / 今天：{today_day}日")
+            if last_day < today_day - 1:
+                print(f"   [WARN] 数据只更新到 {last_day}日，今天已 {today_day}日 —— 数据可能未刷新")
+                refreshed_ok = False
+            else:
+                print(f"   [OK] 数据已更新到 {last_day}日")
+
+            if done and plan_qty and done > plan_qty:
+                print(f"   [WARN] 已完成下线({done:,}) > 本月计划({plan_qty:,})，数据异常")
+                refreshed_ok = False
+
+            if not refreshed_ok:
+                print(f"   [WARN] 本次报表数据可信度存疑，请核对源数据（数据源/产量/发货文件是否已更新）")
+        except Exception as e:
+            print(f"   [WARN] 校验失败（不阻断流程）：{e}")
 
         # ─ Step 3: 另存为新文件（防冲突）──────────────
         print("[Step 3] 另存为新文件...")

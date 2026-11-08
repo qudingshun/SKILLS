@@ -80,3 +80,10 @@ E:/SKILLS/.venv/Scripts/python.exe E:/SKILLS/camera-capture/scripts/camera_captu
   - `scripts\screen_capture.py` — mss 版，**SKILL.md 指向的就是这个，能用**
   - 根目录 `screen_capture.py` — cv2 版，**孤儿文件，SKILL.md 未引用，代码有 bug，不要调用**
 - `screen-capture/` 与 `camera-capture/` 尚未纳入 git 跟踪
+- **`E:\whirlpool-china\` 旧树已废弃（2026-10-29 标注）**：其中的脚本均已迁入 `E:\SKILLS\<技能名>\`，
+  该目录自带 `.venv` 且版本落后，**禁止**再被任何 SKILL.md / 定时任务 / 链式任务引用。
+  详见 `E:\whirlpool-china\DEPRECATED.md`（含新旧路径对照表）。
+- **跨技能共享数据目录只有一处**：`E:\OneDrive\桌面\桌面临时文件\PMC小工具\回货引用文件\加载文件`
+  （写完方 `WHP-whirlpool-download`，读方 4 个技能全部硬编码此路径）。
+  曾多次出现配置被改到 `桌面前期文件` / `PMC 小工具`（带空格）导致读写分叉，改配置前先核对读方。
+- 同一功能不要在 `E:\SKILLS\` 之外再留第二份实现（例如 `inventory_daily` 的旧版曾是定时任务实际入口）。
